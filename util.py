@@ -40,16 +40,15 @@ def get_image_paths_eeg(group_name = None):
     """
 
     # Load the metadata file
-    metadata_path = os.path.expanduser("~/Documents/BrainAlign_Data/eeg_image_metadata.npy.npy")
+    metadata_path = os.path.expanduser("~/Documents/BrainAlign_Data/eeg_image_metadata.npy")
     metadata = np.load(metadata_path, allow_pickle=True).item()
-
-
 
     # Get the image paths for the specified group
     path_strings = [f"{category.split('_', 1)[1]}/{image}" for category, image in zip(metadata.item()["{group_name}_img_concepts"], metadata.item()["{group_name}_img_files"])]
 
     image_paths = os.path.join(os.path.expanduser("~/Documents/BrainAlign_Data/things_images/"), path_strings)
 
+    return image_paths
 
 ############################# Low-level Functions: Dataset
 
