@@ -44,7 +44,7 @@ def get_image_paths_eeg(group_name = None):
     metadata = np.load(metadata_path, allow_pickle=True).item()
 
     # Get the image paths for the specified group
-    path_strings = [f"{category.split('_', 1)[1]}/{image}" for category, image in zip(metadata.item()["{group_name}_img_concepts"], metadata.item()["{group_name}_img_files"])]
+    path_strings = [f"{category.split('_', 1)[1]}/{image}" for category, image in zip(metadata["{group_name}_img_concepts"], metadata["{group_name}_img_files"])]
 
     image_paths = os.path.join(os.path.expanduser("~/Documents/BrainAlign_Data/things_images/"), path_strings)
 
