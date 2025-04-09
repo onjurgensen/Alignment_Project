@@ -44,9 +44,9 @@ def get_image_paths_eeg(group_name = None):
     metadata = np.load(metadata_path, allow_pickle=True).item()
 
     # Get the image paths for the specified group
-    path_strings = [f"{category.split('_', 1)[1]}/{image}" for category, image in zip(metadata["{group_name}_img_concepts"], metadata["{group_name}_img_files"])]
+    path_strings = [f"{category.split('_', 1)[1]}/{image}" for category, image in zip(metadata[f"{group_name}_img_concepts"], metadata[f"{group_name}_img_files"])]
 
-    image_paths = os.path.join(os.path.expanduser("~/Documents/BrainAlign_Data/things_images/"), path_strings)
+    image_paths = [os.path.join(os.path.expanduser("~/Documents/BrainAlign_Data/things_images/"), path_string) for path_string in path_strings]
 
     return image_paths
 
@@ -169,9 +169,8 @@ def get_dataloader(dataset_name, batch_size=128, num_workers=4):
     ])
 
     # Check which dataset and respond accordingly
-    if dataset_name == 'THINGS':
+    if dataset_name == 'tvsd':
         
-
         # define directory where THINGS images are stored
         THINGS_PATH = os.path.expanduser("~/Documents/BrainAlign_Data/things_images/")
 
@@ -190,7 +189,26 @@ def get_dataloader(dataset_name, batch_size=128, num_workers=4):
         train_dataloader, test_dataloader = get_things_dataloader(transform,THINGS_PATH, train_imgs_paths, test_imgs_paths, batch_size=batch_size, num_workers=num_workers)
 
         return train_dataloader, test_dataloader
+
+    elif dataset_name == 'eeg':
+
+        THINGS_PATH = os.path.expanduser("~/Documents/BrainAlign_Data/things_images/")
+
+        train_imgs_paths = get_image_paths_eeg(group_name = "train")
+        test_imgs_paths = get_image_paths_eeg(group_name = "test")
+
+        for i in range(len(train_imgs_paths)):
+            train_imgs_paths[i] = os.path.join(THINGS_PATH, os.path.normpath(train_imgs_paths[i]))
         
+        for i in range(len(test_imgs_paths)):
+            test_imgs_paths[i] = os.path.join(THINGS_PATH, os.path.normpath(test_imgs_paths[i]))
+
+        train_dataloader, test_dataloader = get_things_dataloader(transform,THINGS_PATH, train_imgs_paths, test_imgs_paths, batch_size=batch_size, num_workers=num_workers)
+
+        return train_dataloader, test_dataloader
+
+
+
     elif dataset_name == 'NSD':
         ... # do NSD dataloader preparation
 
@@ -204,7 +222,7 @@ import torch
 import tqdm
 from torchvision.models.feature_extraction import create_feature_extractor
 
-def extract_features(model, dataloader, device, return_nodes=None):
+def extract_features(model, dataloader, device, return_nodes=None, unflatten=True):
     """
     Extracts features from specific layers of a pre-trained model.
 
@@ -213,6 +231,7 @@ def extract_features(model, dataloader, device, return_nodes=None):
         dataloader (DataLoader): DataLoader to fetch images in batches.
         device (torch.device): Device to run inference on (CPU/GPU).
         return_nodes (dict, optional): Dictionary mapping layer names to output names.
+        unflatten (bool, optional): If True, flattens the output features.
     
     Returns:
         dict: Dictionary of extracted features from specified layers.
@@ -237,51 +256,11 @@ def extract_features(model, dataloader, device, return_nodes=None):
             
             batch_activations = model(imgs) 
             for key, activation in batch_activations.items():
-                activation = torch.flatten(activation, start_dim=1)  # Flatten while keeping batch dim
+                if unflatten:
+                    activation = torch.flatten(activation, start_dim=1)  # Flatten while keeping batch dim
                 all_features[key].append(activation.cpu())
     # Concatenate all batch features for each layer
     all_features = {key: torch.cat(features, dim=0) for key, features in all_features.items()}
     
     return all_features
 
-
-
-def extract_features_unflattened(model, dataloader, device, return_nodes=None):
-    """
-    Extracts features from specific layers of a pre-trained model.
-
-    Args:
-        model (torch.nn.Module): Pretrained model for feature extraction.
-        dataloader (DataLoader): DataLoader to fetch images in batches.
-        device (torch.device): Device to run inference on (CPU/GPU).
-        return_nodes (dict, optional): Dictionary mapping layer names to output names.
-    
-    Returns:
-        dict: Dictionary of extracted features from specified layers.
-    """
-    # Apply return_nodes if specified
-    if return_nodes:
-        model = create_feature_extractor(model, return_nodes=return_nodes)
-
-    # Move model to device and set to evaluation mode
-    model.to(device)
-    model.eval() 
-    
-    # Initialize dictionary to store features for each layer with the key as the layer name
-    all_features = {key: [] for key in return_nodes.values()}  
-
-
-    # Iterate over the dataloader to extract features
-    with torch.no_grad():
-        for item in tqdm.tqdm(dataloader, total=len(dataloader)):
-            imgs, _, _ = item  # Unpack all three returned values
-            imgs = imgs.to(device)
-            
-            batch_activations = model(imgs) 
-            for key, activation in batch_activations.items():
-                #activation = torch.flatten(activation, start_dim=1)  # remove flattening
-                all_features[key].append(activation.cpu())
-    # Concatenate all batch features for each layer
-    all_features = {key: torch.cat(features, dim=0) for key, features in all_features.items()}
-    
-    return all_features

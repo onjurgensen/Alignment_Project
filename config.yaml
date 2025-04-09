@@ -1,0 +1,41 @@
+models:
+  alexnet:
+    - 'features.1': 'Relu1'
+    - 'features.2': 'MaxPool1'
+    # - 'features.3': 'Conv1'
+    # - 'features.4': 'Relu2'
+    # - 'features.5': 'MaxPool2'
+    # - 'features.6': 'Conv2'
+    # - 'features.7': 'Relu3'
+    # - 'features.8': 'Conv3'
+    # - 'features.9': 'Relu4'
+    # - 'features.10': 'Conv4'
+    # - 'features.11': 'Relu5'
+    # - 'features.12': 'MaxPool5'
+  resnet:
+    - 
+  
+  
+modalities:
+  ephys:
+    - monkeyF
+    - monkeyN
+  fmri:
+    - 01
+  eeg:
+    - 01
+    - 02
+    - 03
+    - 04
+    - 05
+    - 06
+    - 07
+    - 08
+    - 09
+    - 10
+
+
+metrics:
+  - "correcting_cka_alignment/cka"
+  - "correcting_cka_alignment/cka_debiased" 
+  - "brainscore/rsa-correlation-spearman"
