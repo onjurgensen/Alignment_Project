@@ -9,6 +9,7 @@ from sklearn.linear_model import RidgeCV
 from sklearn.metrics import r2_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.random_projection import SparseRandomProjection
+from sklearn.model_selection import KFold
 
 # linear shape metric
 from netrep.metrics import LinearMetric
@@ -103,10 +104,26 @@ def rsa(X, Y, metric='correlation', method='spearman'):
 
     return(rsa(X, Y))
 
-def versa(X_train, Y_train, X_test, Y_test, metric="correlation", method="spearman", alphas = np.logspace(-8, 8, 17), standardize=False, dim_reduction=None):
 
+def versa(X_train, Y_train, X_test, Y_test, metric="correlation", method="spearman", alphas=np.logspace(-8, 8, 17), standardize=False, dim_reduction=None):
+    """
+    Perform ridge regression with optional standardization and dimensionality reduction,
+    followed by representational similarity analysis (RSA).
+
+    Parameters:
+    - X_train, X_test: Feature matrices (numpy arrays).
+    - Y_train, Y_test: Target matrices (numpy arrays).
+    - metric: Distance metric for RSA (default: "correlation").
+    - method: Similarity comparison method for RSA (default: "spearman").
+    - alphas: Regularization strengths for RidgeCV (default: np.logspace(-8, 8, 17)).
+    - standardize: Whether to standardize features and targets (default: False).
+    - dim_reduction: Dimensionality reduction method (e.g., "srp" for Sparse Random Projection).
+
+    Returns:
+    - RSA result comparing predicted and actual target data.
+    """
     if standardize:
-        # Standardize the features
+        # Standardize features and targets
         scaler_X = StandardScaler()
         scaler_Y = StandardScaler()
 
@@ -117,20 +134,102 @@ def versa(X_train, Y_train, X_test, Y_test, metric="correlation", method="spearm
 
     if dim_reduction == "srp":
         # Apply Sparse Random Projection
-        srp = SparseRandomProjection(alpha =0.1)
+        srp = SparseRandomProjection()
         X_train = srp.fit_transform(X_train)
         X_test = srp.transform(X_test)
-        
+
+    # Ridge regression with cross-validation
     predictor = RidgeCV(alphas=alphas)
     predictor.fit(X_train, Y_train)
     Y_pred = predictor.predict(X_test)
 
-    # If standardization was applied, inverse transform Y_test and Y_pred for proper comparison
+    # Inverse transform if standardization was applied
     if standardize:
         Y_pred = scaler_Y.inverse_transform(Y_pred)
         Y_test = scaler_Y.inverse_transform(Y_test)
 
-    rsa = similarity.make("measure/rsatoolbox/versa-rdm={metric}-compare={method}")
-
+    # Perform RSA
+    rsa = similarity.make(f"measure/rsatoolbox/versa-rdm={metric}-compare={method}")
     return rsa(Y_pred, Y_test)
 
+
+########################## Linear Shape Metric ##########################
+
+
+def linear_shape_metric(X_train, Y_train, X_test, Y_test, alpha = 1, score_method = "angular"):
+    """
+    Compute the linear shape metric between two sets of data.
+    
+    Parameters:
+    - X_train: Training data (numpy array).
+    - Y_train: Training labels (numpy array).
+    - X_test: Test data (numpy array).
+    - Y_test: Test labels (numpy array).
+    - alpha: Regularization parameter for the linear shape metric.
+      - alpha = 0.0: CCA metric (no regularization).
+      - alpha = 1.0: Procrustes metric (fully regularized metric)
+    
+    Returns:
+    - Linear shape metric value.
+    """
+    
+    # Compute the linear shape metric
+    metric = LinearMetric(alpha=alpha, center_columns=True, score_method = score_method)
+
+    # Fit the metric to the training data
+    metric.fit(X_train, Y_train, score_method)
+    # get score on test data
+    score = metric.score(X_test, Y_test)
+    
+    return score
+
+
+def linear_shape_metric_cv(X_train, Y_train, X_test, Y_test, alphas=np.linspace(0, 1, 11), score_method="angular", cv_folds=5):
+    """
+    Compute the linear shape metric with cross-validation for the alpha parameter.
+    
+    Parameters:
+    - X_train: Training data (numpy array).
+    - Y_train: Training labels (numpy array).
+    - X_test: Test data (numpy array).
+    - Y_test: Test labels (numpy array).
+    - alphas: List or array of alpha values to cross-validate.
+    - score_method: Scoring method for the linear shape metric.
+    - cv_folds: Number of folds for cross-validation.
+    
+    Returns:
+    - Best alpha value based on cross-validation.
+    - Linear shape metric value using the best alpha.
+    """
+
+    # If multiple alphas provided, perform cross-validation to find the best alpha
+    if len(alphas) > 1:
+
+        best_alpha = None
+        best_score = np.inf
+        kf = KFold(n_splits=cv_folds, shuffle=True, random_state=42)
+
+        for alpha in alphas:
+            cv_scores = []
+            for train_idx, val_idx in kf.split(X_train):
+                X_train_fold, X_val_fold = X_train[train_idx], X_train[val_idx]
+                Y_train_fold, Y_val_fold = Y_train[train_idx], Y_train[val_idx]
+
+                # Compute the linear shape metric
+                metric = LinearMetric(alpha=alpha, center_columns=True, score_method=score_method)
+                metric.fit(X_train_fold, Y_train_fold, score_method)
+                score = metric.score(X_val_fold, Y_val_fold)
+                cv_scores.append(score)
+
+            # Average score for this alpha
+            mean_cv_score = np.mean(cv_scores)
+            if mean_cv_score < best_score:  # Minimize the score
+                best_score = mean_cv_score
+                best_alpha = alpha
+
+    # Compute the final score on the test set using the best alpha
+    metric = LinearMetric(alpha=best_alpha, center_columns=True, score_method=score_method)
+    metric.fit(X_train, Y_train, score_method)
+    final_score = metric.score(X_test, Y_test)
+
+    return best_alpha, final_score
