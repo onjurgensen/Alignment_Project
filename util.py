@@ -118,12 +118,14 @@ def get_tvsd_custom(subject_file_path, device="cuda", group_name = ""):
     return(object)
 
 
-def get_eeg(subject, path_to_eeg = None):
+def get_eeg(subject, path_to_eeg = None, group = None):
     """
     Dataloader for EEG data
 
     Args:
         subject (str): Subject ID (e.g. "01")
+        path_to_eeg (str): Path to the preprocessed EEG data directory
+        group (str): Group name (e.g. "training" or "test")
     Returns:
         dict_keys(['preprocessed_eeg_data', 'ch_names', 'times'])
     """
@@ -131,7 +133,7 @@ def get_eeg(subject, path_to_eeg = None):
     if path_to_eeg is None:
         path_to_eeg = os.path.expanduser("~/Documents/BrainAlign_Data/eeg_preprocessed")
     
-    eeg_subject = np.load(os.path.join(path_to_eeg, f"sub-{subject}/preprocessed_eeg_test.npy"), allow_pickle=True).item()
+    eeg_subject = np.load(os.path.join(path_to_eeg, f"sub-{subject}/preprocessed_eeg_{group}.npy"), allow_pickle=True).item()
     
     return eeg_subject
 
