@@ -233,3 +233,20 @@ def linear_shape_metric_cv(X_train, Y_train, X_test, Y_test, alphas=np.linspace(
     final_score = metric.score(X_test, Y_test)
 
     return best_alpha, final_score
+
+
+
+def cka(X, Y, output = "score"):
+    """
+    Compute the linear Centered Kernel Alignment (CKA) between two matrices.
+
+    output: str
+        - "score", distance=squared_euclidean", "distance=euclidean", or "distance=angular"
+
+    Returns:
+    - CKA value.
+    """
+    # Compute the CKA value
+    cka_score = similarity.make(f"measure/netrep/cka-kernel=linear-hsic=gretton-{output}")
+    
+    return cka_score(X, Y)
