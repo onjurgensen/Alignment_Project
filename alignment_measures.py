@@ -99,13 +99,13 @@ def ridge_regression_cv(X_train, Y_train, X_test, Y_test, alphas=np.logspace(-8,
 ########################## RSA ##########################
 
 
-def rsa(X, Y, metric='correlation', method='spearman'):
-    rsa = similarity.make("measure/rsatoolbox/rsa-rdm={metric}-compare={method}")
+def rsa(X, Y, metric='correlation', method='spearman', time_series=False):
+    rsa = similarity.make(f"measure/rsatoolbox/rsa-rdm={metric}-compare={method}")
 
     return(rsa(X, Y))
 
 
-def versa(X_train, Y_train, X_test, Y_test, metric="correlation", method="spearman", alphas=np.logspace(-8, 8, 17), standardize=False, dim_reduction=None):
+def versa(X_train, Y_train, X_test, Y_test, metric="correlation", method="spearman", alphas=np.logspace(-8, 8, 17), standardize=False):
     """
     Perform ridge regression with optional standardization and dimensionality reduction,
     followed by representational similarity analysis (RSA).
@@ -131,12 +131,6 @@ def versa(X_train, Y_train, X_test, Y_test, metric="correlation", method="spearm
         X_test = scaler_X.transform(X_test)
         Y_train = scaler_Y.fit_transform(Y_train)
         Y_test = scaler_Y.transform(Y_test)
-
-    if dim_reduction == "srp":
-        # Apply Sparse Random Projection
-        srp = SparseRandomProjection()
-        X_train = srp.fit_transform(X_train)
-        X_test = srp.transform(X_test)
 
     # Ridge regression with cross-validation
     predictor = RidgeCV(alphas=alphas)
@@ -177,7 +171,7 @@ def linear_shape_metric(X_train, Y_train, X_test, Y_test, alpha = 1, score_metho
     metric = LinearMetric(alpha=alpha, center_columns=True, score_method = score_method)
 
     # Fit the metric to the training data
-    metric.fit(X_train, Y_train, score_method)
+    metric.fit(X_train, Y_train)
     # get score on test data
     score = metric.score(X_test, Y_test)
     
@@ -217,7 +211,7 @@ def linear_shape_metric_cv(X_train, Y_train, X_test, Y_test, alphas=np.linspace(
 
                 # Compute the linear shape metric
                 metric = LinearMetric(alpha=alpha, center_columns=True, score_method=score_method)
-                metric.fit(X_train_fold, Y_train_fold, score_method)
+                metric.fit(X_train_fold, Y_train_fold)
                 score = metric.score(X_val_fold, Y_val_fold)
                 cv_scores.append(score)
 
