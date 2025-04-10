@@ -105,7 +105,7 @@ def rsa(X, Y, metric='correlation', method='spearman', time_series=False):
     return(rsa(X, Y))
 
 
-def versa(X_train, Y_train, X_test, Y_test, metric="correlation", method="spearman", alphas=np.logspace(-8, 8, 17), standardize=False):
+def versa(X_train, Y_train, X_test, Y_test, metric="correlation", method="spearman", alphas=np.logspace(-8, 8, 17), standardize=False, time_series=False):
     """
     Perform ridge regression with optional standardization and dimensionality reduction,
     followed by representational similarity analysis (RSA).
@@ -132,19 +132,46 @@ def versa(X_train, Y_train, X_test, Y_test, metric="correlation", method="spearm
         Y_train = scaler_Y.fit_transform(Y_train)
         Y_test = scaler_Y.transform(Y_test)
 
-    # Ridge regression with cross-validation
-    predictor = RidgeCV(alphas=alphas)
-    predictor.fit(X_train, Y_train)
-    Y_pred = predictor.predict(X_test)
+    if time_series is False:
+        # Ridge regression with cross-validation
+        predictor = RidgeCV(alphas=alphas)
+        predictor.fit(X_train, Y_train)
+        Y_pred = predictor.predict(X_test)
 
-    # Inverse transform if standardization was applied
-    if standardize:
-        Y_pred = scaler_Y.inverse_transform(Y_pred)
-        Y_test = scaler_Y.inverse_transform(Y_test)
+        # Inverse transform if standardization was applied
+        if standardize:
+            Y_pred = scaler_Y.inverse_transform(Y_pred)
+            Y_test = scaler_Y.inverse_transform(Y_test)
 
-    # Perform RSA
-    rsa = similarity.make(f"measure/rsatoolbox/versa-rdm={metric}-compare={method}")
-    return rsa(Y_pred, Y_test)
+        # Perform RSA
+        rsa = similarity.make(f"measure/rsatoolbox/versa-rdm={metric}-compare={method}")
+        return rsa(Y_pred, Y_test)
+    
+    if time_series is True:
+        Y_train_flat = Y_train.reshape(Y_train.shape[0], -1)
+        Y_test_flat = Y_test.reshape(Y_test.shape[0], -1)
+
+        predictor = RidgeCV(alphas=alphas)
+        predictor.fit(X_train, Y_train_flat)
+        Y_pred = predictor.predict(X_test)
+
+        # Reshape Y_pred to match the shape of Y_test
+        Y_pred = Y_pred.reshape(Y_test.shape)
+
+        # Inverse transform if standardization was applied
+        if standardize:
+            Y_pred = scaler_Y.inverse_transform(Y_pred)
+            Y_test = scaler_Y.inverse_transform(Y_test)
+
+        # Perform RSA
+        rsa = similarity.make(f"measure/rsatoolbox/versa-rdm={metric}-compare={method}")
+        scores = []
+        # Compute RSA for each time point
+        for i in range(Y_pred.shape[2]):
+            rsa_score = rsa(Y_pred[:, :, i], Y_test[:, :, i])
+            scores.append(rsa_score)
+            
+        return scores
 
 
 ########################## Linear Shape Metric ##########################
