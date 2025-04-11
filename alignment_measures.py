@@ -100,7 +100,11 @@ def ridge_regression_cv(X_train, Y_train, X_test, Y_test, alphas=np.logspace(-8,
 
 
 def rsa(X, Y, metric='correlation', method='spearman', time_series=False):
-    rsa = similarity.make(f"measure/rsatoolbox/rsa-rdm={metric}-compare={method}")
+    if metric != "cosine":
+        rsa = similarity.make(f"measure/rsatoolbox/rsa-rdm={metric}-compare={method}")
+    else:
+        rsa = similarity.make(f"measure/thingsvision/rsa-rdm=cosine-compare={method}")
+
 
     return(rsa(X, Y))
 
@@ -122,17 +126,22 @@ def versa(X_train, Y_train, X_test, Y_test, metric="correlation", method="spearm
     Returns:
     - RSA result comparing predicted and actual target data.
     """
-    if standardize:
-        # Standardize features and targets
-        scaler_X = StandardScaler()
-        scaler_Y = StandardScaler()
-
-        X_train = scaler_X.fit_transform(X_train)
-        X_test = scaler_X.transform(X_test)
-        Y_train = scaler_Y.fit_transform(Y_train)
-        Y_test = scaler_Y.transform(Y_test)
-
+    if metric != "cosine":
+        rsa = similarity.make(f"measure/rsatoolbox/rsa-rdm={metric}-compare={method}")
+    else:
+        rsa = similarity.make(f"measure/thingsvision/rsa-rdm=cosine-compare={method}")
     if time_series is False:
+
+        if standardize:
+            # Standardize features and targets
+            scaler_X = StandardScaler()
+            scaler_Y = StandardScaler()
+
+            X_train = scaler_X.fit_transform(X_train)
+            X_test = scaler_X.transform(X_test)
+            Y_train = scaler_Y.fit_transform(Y_train)
+            Y_test = scaler_Y.transform(Y_test)
+
         # Ridge regression with cross-validation
         predictor = RidgeCV(alphas=alphas)
         predictor.fit(X_train, Y_train)
@@ -144,7 +153,6 @@ def versa(X_train, Y_train, X_test, Y_test, metric="correlation", method="spearm
             Y_test = scaler_Y.inverse_transform(Y_test)
 
         # Perform RSA
-        rsa = similarity.make(f"measure/rsatoolbox/versa-rdm={metric}-compare={method}")
         return rsa(Y_pred, Y_test)
     
     if time_series is True:
@@ -158,13 +166,7 @@ def versa(X_train, Y_train, X_test, Y_test, metric="correlation", method="spearm
         # Reshape Y_pred to match the shape of Y_test
         Y_pred = Y_pred.reshape(Y_test.shape)
 
-        # Inverse transform if standardization was applied
-        if standardize:
-            Y_pred = scaler_Y.inverse_transform(Y_pred)
-            Y_test = scaler_Y.inverse_transform(Y_test)
-
         # Perform RSA
-        rsa = similarity.make(f"measure/rsatoolbox/versa-rdm={metric}-compare={method}")
         scores = []
         # Compute RSA for each time point
         for i in range(Y_pred.shape[2]):
