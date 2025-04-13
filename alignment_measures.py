@@ -273,3 +273,18 @@ def cka(X, Y, output = "score"):
     cka_score = similarity.make(f"measure/netrep/cka-kernel=linear-hsic=gretton-{output}")
     
     return cka_score(X, Y)
+
+def cka2(X, Y, output = "score"):
+    """
+    Compute the linear Centered Kernel Alignment (CKA) between two matrices.
+
+    output: str
+        - "score", distance=squared_euclidean", "distance=euclidean", or "distance=angular"
+
+    Returns:
+    - CKA value.
+    """
+    # Compute the CKA value
+    cka_score = similarity.make(f"measure/brainscore/cka-kernel=linear-hsic=gretton-{output}")
+    
+    return cka_score(X, Y)
