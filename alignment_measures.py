@@ -109,7 +109,7 @@ def rsa(X, Y, metric='correlation', method='spearman', time_series=False):
     return(rsa(X, Y))
 
 
-def versa(X_train, Y_train, X_test, Y_test, metric="correlation", method="spearman", alphas=np.logspace(-8, 8, 17), standardize=False, time_series=False):
+def versa(X_train, Y_train, X_test, Y_test, metrics= ["correlation"], methods = ["spearman"], alphas=np.logspace(-8, 8, 17), standardize=False, time_series=False):
     """
     Perform ridge regression with optional standardization and dimensionality reduction,
     followed by representational similarity analysis (RSA).
@@ -117,8 +117,8 @@ def versa(X_train, Y_train, X_test, Y_test, metric="correlation", method="spearm
     Parameters:
     - X_train, X_test: Feature matrices (numpy arrays).
     - Y_train, Y_test: Target matrices (numpy arrays).
-    - metric: Distance metric for RSA (default: "correlation").
-    - method: Similarity comparison method for RSA (default: "spearman").
+    - metrics (tuple): Metrics for RSA (default: ("correlation")).
+    - methods (tuple): Methods for RSA (default: ("spearman")).
     - alphas: Regularization strengths for RidgeCV (default: np.logspace(-8, 8, 17)).
     - standardize: Whether to standardize features and targets (default: False).
     - dim_reduction: Dimensionality reduction method (e.g., "srp" for Sparse Random Projection).
@@ -126,10 +126,7 @@ def versa(X_train, Y_train, X_test, Y_test, metric="correlation", method="spearm
     Returns:
     - RSA result comparing predicted and actual target data.
     """
-    if metric != "cosine":
-        rsa = similarity.make(f"measure/rsatoolbox/rsa-rdm={metric}-compare={method}")
-    else:
-        rsa = similarity.make(f"measure/thingsvision/rsa-rdm=cosine-compare={method}")
+    print("versa() from alignment_measures.py is being called")
     if time_series is False:
 
         if standardize:
@@ -153,9 +150,20 @@ def versa(X_train, Y_train, X_test, Y_test, metric="correlation", method="spearm
             Y_test = scaler_Y.inverse_transform(Y_test)
 
         # Perform RSA
-        return rsa(Y_pred, Y_test)
-    
+        measure_scores = []
+        for metric in metrics:
+            for method in methods:
+                if metric != "cosine":
+                    rsa = similarity.make(f"measure/rsatoolbox/rsa-rdm={metric}-compare={method}")
+                else:
+                    rsa = similarity.make(f"measure/thingsvision/rsa-rdm=cosine-compare={method}")
+                # Compute RSA
+                rsa_score = rsa(Y_pred, Y_test)
+                
+        return measure_scores
+
     if time_series is True:
+
         Y_train_flat = Y_train.reshape(Y_train.shape[0], -1)
         Y_test_flat = Y_test.reshape(Y_test.shape[0], -1)
 
@@ -167,14 +175,22 @@ def versa(X_train, Y_train, X_test, Y_test, metric="correlation", method="spearm
         Y_pred = Y_pred.reshape(Y_test.shape)
 
         # Perform RSA
-        scores = []
-        # Compute RSA for each time point
-        for i in range(Y_pred.shape[2]):
-            rsa_score = rsa(Y_pred[:, :, i], Y_test[:, :, i])
-            scores.append(rsa_score)
-            
-        return scores
+        measure_scores = []
+        # Compute RSA for each setting
+        for metric in metrics:
+            for method in methods:
+                if metric != "cosine":
+                    rsa = similarity.make(f"measure/rsatoolbox/rsa-rdm={metric}-compare={method}")
+                else:
+                    rsa = similarity.make(f"measure/thingsvision/rsa-rdm=cosine-compare={method}")
+                # Compute RSA for each timepoint
+                timepoint_scores = []
+                for i in range(Y_pred.shape[2]):
+                    rsa_score = rsa(Y_pred[:, :, i], Y_test[:, :, i])
+                    timepoint_scores.append(rsa_score)
+                measure_scores.append(timepoint_scores)
 
+        return measure_scores
 
 ########################## Linear Shape Metric ##########################
 
