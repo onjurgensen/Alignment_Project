@@ -126,7 +126,6 @@ def versa(X_train, Y_train, X_test, Y_test, metrics= ["correlation"], methods = 
     Returns:
     - RSA result comparing predicted and actual target data.
     """
-    print("versa() from alignment_measures.py is being called")
     if time_series is False:
 
         if standardize:

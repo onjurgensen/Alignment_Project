@@ -144,6 +144,7 @@ def get_eeg(subject, path_to_eeg = None, group = None, downsample_factor = None,
 
     if time_range is not None:
         time_mask = (eeg_subject['times'] >= time_range[0]) & (eeg_subject['times'] <= time_range[1])
+        eeg_subject['times'] = eeg_subject['times'][time_mask]
         if average_trials:
             eeg_subject['preprocessed_eeg_data'] = eeg_subject['preprocessed_eeg_data'][:, :, time_mask]
         else:
