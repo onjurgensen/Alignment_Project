@@ -6,6 +6,7 @@ import numpy as np
 import torch 
 from scipy.io import loadmat
 import os
+from scipy.signal import decimate
 
 #################### Get Image Paths for THINGS dataset ################
 
@@ -118,7 +119,7 @@ def get_tvsd_custom(subject_file_path, device="cuda", group_name = ""):
     return(object)
 
 
-def get_eeg(subject, path_to_eeg = None, group = None):
+def get_eeg(subject, path_to_eeg = None, group = None, downsample_factor = None, average_trials = False, time_range = None):
     """
     Dataloader for EEG data
 
@@ -134,7 +135,20 @@ def get_eeg(subject, path_to_eeg = None, group = None):
         path_to_eeg = os.path.expanduser("~/Documents/BrainAlign_Data/eeg_preprocessed")
     
     eeg_subject = np.load(os.path.join(path_to_eeg, f"sub-{subject}/preprocessed_eeg_{group}.npy"), allow_pickle=True).item()
-    
+
+    if downsample_factor is not None:
+        eeg_subject['preprocessed_eeg_data'] = decimate(eeg_subject['preprocessed_eeg_data'], downsample_factor, axis=-1, ftype='fir', zero_phase=True)
+        eeg_subject['times'] = eeg_subject['times'][::downsample_factor]
+    if average_trials:
+        eeg_subject["preprocessed_eeg_data"] = eeg_subject["preprocessed_eeg_data"].mean(axis=1)
+
+    if time_range is not None:
+        time_mask = (eeg_subject['times'] >= time_range[0]) & (eeg_subject['times'] <= time_range[1])
+        if average_trials:
+            eeg_subject['preprocessed_eeg_data'] = eeg_subject['preprocessed_eeg_data'][:, :, time_mask]
+        else:
+            eeg_subject['preprocessed_eeg_data'] = eeg_subject['preprocessed_eeg_data'][:, :, :,time_mask]
+
     return eeg_subject
 
 
@@ -276,6 +290,8 @@ def extract_features(model, dataloader, device, return_nodes=None, unflatten=Tru
                 all_features[key].append(activation.cpu())
     # Concatenate all batch features for each layer
     all_features = {key: torch.cat(features, dim=0) for key, features in all_features.items()}
+
+
     
     return all_features
 
