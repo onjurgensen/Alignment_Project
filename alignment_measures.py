@@ -71,7 +71,7 @@ def ridge_regression(X_train, X_test, Y_train, Y_test, alpha=1.0, standardize=Fa
     return r2_score(y_pred=Y_pred, y_true=Y_test, multioutput="raw_values")
 
 
-def ridge_regression_cv(X_train, Y_train, X_test, Y_test, alphas=np.logspace(-8, 8, 17), standardize=False):
+def ridge_regression_cv(X_train, Y_train, X_test, Y_test, alphas=np.logspace(-8, 8, 17), standardize=False, multioutput = "raw_values"):
 
     if standardize:
         # Standardize the features
@@ -92,7 +92,7 @@ def ridge_regression_cv(X_train, Y_train, X_test, Y_test, alphas=np.logspace(-8,
         Y_pred = scaler_Y.inverse_transform(Y_pred)
         Y_test = scaler_Y.inverse_transform(Y_test)
 
-    return r2_score(y_pred=Y_pred, y_true=Y_test, multioutput="raw_values")
+    return r2_score(y_pred=Y_pred, y_true=Y_test, multioutput=multioutput)
 
 
 
@@ -194,7 +194,7 @@ def versa(X_train, Y_train, X_test, Y_test, metrics= ["correlation"], methods = 
 ########################## Linear Shape Metric ##########################
 
 
-def linear_shape_metric(X_train, Y_train, X_test, Y_test, alpha = 1, score_method = "angular"):
+def linear_shape_metric(X_train, Y_train, X_test, Y_test, alpha = 1, score_method = "angular", zero_pad = True):
     """
     Compute the linear shape metric between two sets of data.
     
@@ -212,7 +212,7 @@ def linear_shape_metric(X_train, Y_train, X_test, Y_test, alpha = 1, score_metho
     """
     
     # Compute the linear shape metric
-    metric = LinearMetric(alpha=alpha, center_columns=True, score_method = score_method)
+    metric = LinearMetric(alpha=alpha, center_columns=True, score_method = score_method, zero_pad=zero_pad)
 
     # Fit the metric to the training data
     metric.fit(X_train, Y_train)

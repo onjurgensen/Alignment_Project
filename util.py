@@ -136,6 +136,9 @@ def get_eeg(subject, path_to_eeg = None, group = None, downsample_factor = None,
     
     eeg_subject = np.load(os.path.join(path_to_eeg, f"sub-{subject}/preprocessed_eeg_{group}.npy"), allow_pickle=True).item()
 
+    #round time
+    eeg_subject['times'] = eeg_subject['times'].round(2)
+
     if downsample_factor is not None:
         eeg_subject['preprocessed_eeg_data'] = decimate(eeg_subject['preprocessed_eeg_data'], downsample_factor, axis=-1, ftype='fir', zero_phase=True)
         eeg_subject['times'] = eeg_subject['times'][::downsample_factor]
