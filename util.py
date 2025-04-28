@@ -8,6 +8,7 @@ from scipy.io import loadmat
 import os
 from scipy.signal import decimate
 import torchvision.models as models
+from pathlib import Path
 
 #################### Get Image Paths for THINGS dataset ################
 
@@ -52,7 +53,7 @@ def get_image_paths_eeg(group_name = None):
 
     return image_paths
 
-############################# Low-level Functions: Dataset
+############################# Low-level Functions: Dataloaders
 
 class THINGS(Dataset):
     def __init__(self, root, paths, transform=None, device='cuda'):
@@ -70,6 +71,26 @@ class THINGS(Dataset):
         if self.transform:
             img = self.transform(img)
         return img, 0., idx 
+    
+
+class NSD_ImageDataset(Dataset):
+    def __init__(self, imgs_paths, transform):
+        self.imgs_paths = np.array(imgs_paths)
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.imgs_paths)
+
+    def __getitem__(self, idx):
+        # Load the image at the given index
+        img_path = self.imgs_paths[idx]
+        img = Image.open(img_path) # .convert('RGB')
+
+        # Apply transformations if provided
+        if self.transform:
+            img = self.transform(img)
+        return img, 0., idx 
+    
 
 def get_things_dataloader(transform, THINGS_PATH,train_imgs_paths, test_imgs_paths, batch_size=128, num_workers=4):
     """Function to get the dataloader for the THINGS dataset"""
@@ -82,6 +103,19 @@ def get_things_dataloader(transform, THINGS_PATH,train_imgs_paths, test_imgs_pat
 
     return train_dataloader, test_dataloader
 
+def get_nsd_dataloader(transform, train_imgs_paths, test_imgs_paths, batch_size=128, num_workers=4):
+    """Function to get the dataloader for the NSD dataset"""
+    
+    train_dataset = NSD_ImageDataset(transform=transform, paths=train_imgs_paths)
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=False)
+
+    test_dataset = NSD_ImageDataset(transform=transform, paths=test_imgs_paths)
+    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=False)
+
+    return train_dataloader, test_dataloader
+
+
+################################# Low-level Functions: Neurodata
 
 def get_tvsd(subject_file_path, normalized=True, device="cuda", group_name = "train_MUA", monkey = None):
     """Dataloader for neurodata from TVSD dataset, this function will return the data for a single subject separated into V1, V4, IT"""
@@ -157,7 +191,7 @@ def get_eeg(subject, path_to_eeg = None, group = None, downsample_factor = None,
     return eeg_subject
 
 
-def get_fmri(subject, hemishere, path_to_fmri = None):
+def get_fmri(subject, hemisphere, path_to_fmri = None):
     """
     Dataloader for fMRI data:
     Args:
@@ -172,12 +206,12 @@ def get_fmri(subject, hemishere, path_to_fmri = None):
         path_to_fmri = os.path.expanduser("~/Documents/BrainAlign_Data/NSD_preprocessed")
 
 
-    train_data = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/training_split/training_fmri/{hemishere}_training_fmri.npy"))
-    test_data = np.load(os.path.join(path_to_fmri, f"test_data/subj{subject}/test_split/test_fmri/{hemishere}_test_fmri.npy"))
+    train_data = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/training_split/training_fmri/{hemisphere}_training_fmri.npy"))
+    test_data = np.load(os.path.join(path_to_fmri, f"test_data/subj{subject}/test_split/test_fmri/{hemisphere}_test_fmri.npy"))
 
     # load two mask files
-    mask_early = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/{hemishere}.prf-visualrois_challenge_space.npy"))
-    mask_ffa = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/{hemishere}.floc-faces_challenge_space.npy"))
+    mask_early = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/{hemisphere}.prf-visualrois_challenge_space.npy"))
+    mask_ffa = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/{hemisphere}.floc-faces_challenge_space.npy"))
     # load two mapping files
     mapping_early = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/mapping_prf-visualrois.npy"),
                             allow_pickle=True).item()
@@ -194,8 +228,6 @@ def get_fmri(subject, hemishere, path_to_fmri = None):
 
     keys = [k for k, v in mapping_ffa.items() if v in ['FFA-1', 'FFA-2']]
     FFA_mask = np.isin(mask_ffa, keys)
-
-    combined_mask = V1_mask | V4_mask | FFA_mask
 
     # create dict for masks
     masks = {
@@ -317,14 +349,34 @@ def get_dataloader(dataset_name, batch_size=128, num_workers=4, subject = None):
     
     elif dataset_name == 'fmri':
         # note that here we have to load per subject
+        if subject is None:
+            raise ValueError("Subject ID must be provided for fMRI data.")
+        
         path_to_fmri = os.path.expanduser("~/Documents/BrainAlign_Data/NSD_preprocessed")
-        path_to_train_img_dir = os.path.expanduser("train_data/subj{subject}/training_split/training_images")
-        path_to_test_img_dir = os.path.expanduser("test_data/subj{subject}/test_split/test_images")
+        train_img_dir = os.path.join(path_to_fmri, f"train_data/subj{subject}/training_split/training_images")
+        test_img_dir = os.path.join(path_to_fmri, f"test_data/subj{subject}/test_split/test_images")
 
-        train_data = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/training_split/training_fmri/{hemishere}_training_fmri.npy"))
-        test_data = np.load(os.path.join(path_to_fmri, f"test_data/subj{subject}/test_split/test_fmri/{hemishere}_test_fmri.npy"))
+        #train_img_list = os.listdir(train_img_dir)
+        #train_img_list.sort()
+        #test_img_list = os.listdir(test_img_dir)
+        #test_img_list.sort()
 
+        train_imgs_paths = sorted(list(Path(train_img_dir).iterdir()))
+        test_imgs_paths = sorted(list(Path(test_img_dir).iterdir()))
 
+        train_dataloader = DataLoader(
+            NSD_ImageDataset(train_imgs_paths, transform),
+            batch_size=batch_size,
+            num_workers=num_workers,
+            shuffle =False
+        )
+        test_dataloader = DataLoader(
+            NSD_ImageDataset(test_imgs_paths, transform),
+            batch_size=batch_size,
+            num_workers=num_workers,
+            shuffle = False
+        )
+        
         return train_dataloader, test_dataloader
 
 
