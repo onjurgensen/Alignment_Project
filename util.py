@@ -7,6 +7,7 @@ import torch
 from scipy.io import loadmat
 import os
 from scipy.signal import decimate
+import torchvision.models as models
 
 #################### Get Image Paths for THINGS dataset ################
 
@@ -156,16 +157,91 @@ def get_eeg(subject, path_to_eeg = None, group = None, downsample_factor = None,
     return eeg_subject
 
 
-def get_fmri(subject):
-    pass
+def get_fmri(subject, hemishere, path_to_fmri = None):
+    """
+    Dataloader for fMRI data:
+    Args:
+        subject (str): Subject ID (e.g. "01")
+        hemishere (str): Hemishere name (e.g. "lh" or "rh")
+    Returns:
+        dict_keys(['train_data', 'test_data', 'roi_masks'])
+        roi_masks: dict_keys(['V1', 'V4', 'FFA'])
+    
+    """
+    if path_to_fmri is None:
+        path_to_fmri = os.path.expanduser("~/Documents/BrainAlign_Data/NSD_preprocessed")
 
 
+    train_data = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/training_split/training_fmri/{hemishere}_training_fmri.npy"))
+    test_data = np.load(os.path.join(path_to_fmri, f"test_data/subj{subject}/test_split/test_fmri/{hemishere}_test_fmri.npy"))
 
+    # load two mask files
+    mask_early = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/{hemishere}.prf-visualrois_challenge_space.npy"))
+    mask_ffa = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/{hemishere}.floc-faces_challenge_space.npy"))
+    # load two mapping files
+    mapping_early = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/mapping_prf-visualrois.npy"),
+                            allow_pickle=True).item()
+    mapping_ffa = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/mapping_floc-faces.npy"),
+                        allow_pickle=True).item()
+    
+    # create masks
+    # create masks for brain areas 
+    keys = [k for k, v in mapping_early.items() if v in ['V1v', 'V1d']]
+    V1_mask = np.isin(mask_early, keys)
 
-def get_model(model_name):
+    keys = [k for k, v in mapping_early.items() if v in ['hV4']]
+    V4_mask = np.isin(mask_early, keys)
+
+    keys = [k for k, v in mapping_ffa.items() if v in ['FFA-1', 'FFA-2']]
+    FFA_mask = np.isin(mask_ffa, keys)
+
+    combined_mask = V1_mask | V4_mask | FFA_mask
+
+    # create dict for masks
+    masks = {
+        'V1': V1_mask,
+        'V4': V4_mask,
+        'FFA': FFA_mask
+    }
+
+    output = {
+        'train_data': train_data,
+        'test_data': test_data,
+        'roi_masks': masks
+    }
+
+    return output
+
+def get_model(model_name, seed):
     if model_name == 'alexnet':
-        model = torch.hub.load('pytorch/vision:v0.6.0', 'alexnet', pretrained=True)
-        #Add more later
+        #model = torch.hub.load('pytorch/vision:v0.6.0', 'alexnet', pretrained=True)
+        model = models.alexnet()
+
+        # Step 2: Load the full dict
+        path = os.path.expanduser(f'~/Documents/pretrained_DNNs/alexnet_model_89_s{seed}.pth')
+        checkpoint = torch.load(path, weights_only=False)
+
+        # Step 3: Extract the model weights
+        state_dict = checkpoint['model']
+
+        # Step 4: Load into model
+        model.load_state_dict(state_dict)
+
+        # Step 5: Evaluation mode (optional)
+        model.eval()
+
+    elif model_name == 'resnet50':
+
+        model = models.resnet50()
+
+        path = os.path.expanduser(f'~/Documents/pretrained_DNNs/resnet50_model_89_s{seed}.pth')
+        checkpoint = torch.load(path, weights_only=False)
+
+        state_dict = checkpoint['model']
+
+        model.load_state_dict(state_dict)
+        model.eval()
+
     return model
 
 
@@ -182,7 +258,7 @@ def get_neurodata(dataset_name, subjects, ephys_normalized=True):
 
 
 
-def get_dataloader(dataset_name, batch_size=128, num_workers=4):
+def get_dataloader(dataset_name, batch_size=128, num_workers=4, subject = None):
     """Function to get the dataloader for the specified dataset
     
     Args:
@@ -193,7 +269,6 @@ def get_dataloader(dataset_name, batch_size=128, num_workers=4):
     Returns:
         train_dataloader, test_dataloader: The dataloaders for the training and testing sets
     """
-    from sklearn.model_selection import train_test_split
 
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
@@ -227,8 +302,8 @@ def get_dataloader(dataset_name, batch_size=128, num_workers=4):
 
         THINGS_PATH = os.path.expanduser("~/Documents/BrainAlign_Data/things_images/")
 
-        train_imgs_paths = get_image_paths_eeg(group_name = "train")
-        test_imgs_paths = get_image_paths_eeg(group_name = "test")
+        train_imgs_paths = get_image_paths_eeg(group_name = 'train')
+        test_imgs_paths = get_image_paths_eeg(group_name = 'test')
 
         for i in range(len(train_imgs_paths)):
             train_imgs_paths[i] = os.path.join(THINGS_PATH, os.path.normpath(train_imgs_paths[i]))
@@ -239,14 +314,19 @@ def get_dataloader(dataset_name, batch_size=128, num_workers=4):
         train_dataloader, test_dataloader = get_things_dataloader(transform,THINGS_PATH, train_imgs_paths, test_imgs_paths, batch_size=batch_size, num_workers=num_workers)
 
         return train_dataloader, test_dataloader
+    
+    elif dataset_name == 'fmri':
+        # note that here we have to load per subject
+        path_to_fmri = os.path.expanduser("~/Documents/BrainAlign_Data/NSD_preprocessed")
+        path_to_train_img_dir = os.path.expanduser("train_data/subj{subject}/training_split/training_images")
+        path_to_test_img_dir = os.path.expanduser("test_data/subj{subject}/test_split/test_images")
 
+        train_data = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/training_split/training_fmri/{hemishere}_training_fmri.npy"))
+        test_data = np.load(os.path.join(path_to_fmri, f"test_data/subj{subject}/test_split/test_fmri/{hemishere}_test_fmri.npy"))
 
-
-    elif dataset_name == 'NSD':
-        ... # do NSD dataloader preparation
 
         return train_dataloader, test_dataloader
-    
+
 
     
 
@@ -291,7 +371,7 @@ def extract_features(model, dataloader, device, return_nodes=None, unflatten=Tru
             for key, activation in batch_activations.items():
                 if unflatten:
                     activation = torch.flatten(activation, start_dim=1)  # Flatten while keeping batch dim
-                all_features[key].append(activation.cpu())
+                all_features[key].append(activation.detach().cpu())  # Detach and move to CPU for storage
     # Concatenate all batch features for each layer
     all_features = {key: torch.cat(features, dim=0) for key, features in all_features.items()}
 

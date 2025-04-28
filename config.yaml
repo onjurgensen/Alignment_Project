@@ -1,5 +1,20 @@
-models:
+model_seeds:
   alexnet:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+  resnet:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+
+
+models:
+  alexnet: # select all feature layers
     'features.0': 'Conv1'
     'features.1': 'Relu1'
     'features.2': 'MaxPool1'
@@ -13,16 +28,157 @@ models:
     'features.10': 'Conv5'
     'features.11': 'Relu5'
     'features.12': 'MaxPool5'
-  resnet:
-    - 
-  
+  resnet50:
+    # 'conv1': 'Conv1'
+    # 'bn1': 'BatchNorm1'
+    # 'relu': 'Relu1'
+    'maxpool': 'MaxPool1'
+    # 'layer1.0': 'Bottleneck1'
+    # 'layer1.0.conv1': 'Bottleneck1-Conv1'
+    # 'layer1.0.bn1': 'Bottleneck1-BN1'
+    # 'layer1.0.conv2': 'Bottleneck1-Conv2'
+    # 'layer1.0.bn2': 'Bottleneck1-BN2'
+    # 'layer1.0.conv3': 'Bottleneck1-Conv3'
+    # 'layer1.0.bn3': 'Bottleneck1-BN3'
+    # 'layer1.0.relu': 'Bottleneck1-Relu'
+    # 'layer1.0.downsample': 'Bottleneck1-Downsample'
+    # 'layer1.0.downsample.0': 'Bottleneck1-Downsample-Conv'
+    'layer1.0.downsample.1': 'Bottleneck1-Downsample-BN'
+    # 'layer1.1': 'Bottleneck2'
+    # 'layer1.1.conv1': 'Bottleneck2-Conv1'
+    # 'layer1.1.bn1': 'Bottleneck2-BN1'
+    # 'layer1.1.conv2': 'Bottleneck2-Conv2'
+    # 'layer1.1.bn2': 'Bottleneck2-BN2'
+    # 'layer1.1.conv3': 'Bottleneck2-Conv3'
+    # 'layer1.1.bn3': 'Bottleneck2-BN3'
+    'layer1.1.relu': 'Bottleneck2-Relu'
+    # 'layer1.2': 'Bottleneck3'
+    # 'layer1.2.conv1': 'Bottleneck3-Conv1'
+    # 'layer1.2.bn1': 'Bottleneck3-BN1'
+    # 'layer1.2.conv2': 'Bottleneck3-Conv2'
+    # 'layer1.2.bn2': 'Bottleneck3-BN2'
+    # 'layer1.2.conv3': 'Bottleneck3-Conv3'
+    # 'layer1.2.bn3': 'Bottleneck3-BN3'
+    'layer1.2.relu': 'Bottleneck3-Relu'
+    # 'layer2.0': 'Bottleneck4'
+    # 'layer2.0.conv1': 'Bottleneck4-Conv1'
+    # 'layer2.0.bn1': 'Bottleneck4-BN1'
+    # 'layer2.0.conv2': 'Bottleneck4-Conv2'
+    # 'layer2.0.bn2': 'Bottleneck4-BN2'
+    # 'layer2.0.conv3': 'Bottleneck4-Conv3'
+    # 'layer2.0.bn3': 'Bottleneck4-BN3'
+    # 'layer2.0.relu': 'Bottleneck4-Relu'
+    # 'layer2.0.downsample': 'Bottleneck4-Downsample'
+    # 'layer2.0.downsample.0': 'Bottleneck4-Downsample-Conv'
+    'layer2.0.downsample.1': 'Bottleneck4-Downsample-BN'
+    # 'layer2.1': 'Bottleneck5'
+    # 'layer2.1.conv1': 'Bottleneck5-Conv1'
+    # 'layer2.1.bn1': 'Bottleneck5-BN1'
+    # 'layer2.1.conv2': 'Bottleneck5-Conv2'
+    # 'layer2.1.bn2': 'Bottleneck5-BN2'
+    # 'layer2.1.conv3': 'Bottleneck5-Conv3'
+    # 'layer2.1.bn3': 'Bottleneck5-BN3'
+    'layer2.1.relu': 'Bottleneck5-Relu'
+    # 'layer2.2': 'Bottleneck6'
+    # 'layer2.2.conv1': 'Bottleneck6-Conv1'
+    # 'layer2.2.bn1': 'Bottleneck6-BN1'
+    # 'layer2.2.conv2': 'Bottleneck6-Conv2'
+    # 'layer2.2.bn2': 'Bottleneck6-BN2'
+    # 'layer2.2.conv3': 'Bottleneck6-Conv3'
+    # 'layer2.2.bn3': 'Bottleneck6-BN3'
+    'layer2.2.relu': 'Bottleneck6-Relu'
+    # 'layer2.3': 'Bottleneck7'
+    # 'layer2.3.conv1': 'Bottleneck7-Conv1'
+    # 'layer2.3.bn1': 'Bottleneck7-BN1'
+    # 'layer2.3.conv2': 'Bottleneck7-Conv2'
+    # 'layer2.3.bn2': 'Bottleneck7-BN2'
+    # 'layer2.3.conv3': 'Bottleneck7-Conv3'
+    # 'layer2.3.bn3': 'Bottleneck7-BN3'
+    'layer2.3.relu': 'Bottleneck7-Relu'
+    # 'layer3.0': 'Bottleneck8'
+    # 'layer3.0.conv1': 'Bottleneck8-Conv1'
+    # 'layer3.0.bn1': 'Bottleneck8-BN1'
+    # 'layer3.0.conv2': 'Bottleneck8-Conv2'
+    # 'layer3.0.bn2': 'Bottleneck8-BN2'
+    # 'layer3.0.conv3': 'Bottleneck8-Conv3'
+    # 'layer3.0.bn3': 'Bottleneck8-BN3'
+    # 'layer3.0.relu': 'Bottleneck8-Relu'
+    # 'layer3.0.downsample': 'Bottleneck8-Downsample'
+    # 'layer3.0.downsample.0': 'Bottleneck8-Downsample-Conv'
+    'layer3.0.downsample.1': 'Bottleneck8-Downsample-BN'
+    # 'layer3.1': 'Bottleneck9'
+    # 'layer3.1.conv1': 'Bottleneck9-Conv1'
+    # 'layer3.1.bn1': 'Bottleneck9-BN1'
+    # 'layer3.1.conv2': 'Bottleneck9-Conv2'
+    # 'layer3.1.bn2': 'Bottleneck9-BN2'
+    # 'layer3.1.conv3': 'Bottleneck9-Conv3'
+    # 'layer3.1.bn3': 'Bottleneck9-BN3'
+    'layer3.1.relu': 'Bottleneck9-Relu'
+    # 'layer3.2': 'Bottleneck10'
+    # 'layer3.2.conv1': 'Bottleneck10-Conv1'
+    # 'layer3.2.bn1': 'Bottleneck10-BN1'
+    # 'layer3.2.conv2': 'Bottleneck10-Conv2'
+    # 'layer3.2.bn2': 'Bottleneck10-BN2'
+    # 'layer3.2.conv3': 'Bottleneck10-Conv3'
+    # 'layer3.2.bn3': 'Bottleneck10-BN3'
+    'layer3.2.relu': 'Bottleneck10-Relu'
+    # 'layer3.3': 'Bottleneck11'
+    # 'layer3.3.conv1': 'Bottleneck11-Conv1'
+    # 'layer3.3.bn1': 'Bottleneck11-BN1'
+    # 'layer3.3.conv2': 'Bottleneck11-Conv2'
+    # 'layer3.3.bn2': 'Bottleneck11-BN2'
+    # 'layer3.3.conv3': 'Bottleneck11-Conv3'
+    # 'layer3.3.bn3': 'Bottleneck11-BN3'
+    'layer3.3.relu': 'Bottleneck11-Relu'
+    # 'layer3.4': 'Bottleneck12'
+    # 'layer3.4.conv1': 'Bottleneck12-Conv1'
+    # 'layer3.4.bn1': 'Bottleneck12-BN1'
+    # 'layer3.4.conv2': 'Bottleneck12-Conv2'
+    # 'layer3.4.bn2': 'Bottleneck12-BN2'
+    # 'layer3.4.conv3': 'Bottleneck12-Conv3'
+    # 'layer3.4.bn3': 'Bottleneck12-BN3'
+    'layer3.4.relu': 'Bottleneck12-Relu'
+    # 'layer3.5': 'Bottleneck13'
+    # 'layer3.5.conv1': 'Bottleneck13-Conv1'
+    # 'layer3.5.bn1': 'Bottleneck13-BN1'
+    # 'layer3.5.conv2': 'Bottleneck13-Conv2'
+    # 'layer3.5.bn2': 'Bottleneck13-BN2'
+    # 'layer3.5.conv3': 'Bottleneck13-Conv3'
+    # 'layer3.5.bn3': 'Bottleneck13-BN3'
+    'layer3.5.relu': 'Bottleneck13-Relu'
+    # 'layer4.0': 'Bottleneck14'
+    # 'layer4.0.conv1': 'Bottleneck14-Conv1'
+    # 'layer4.0.bn1': 'Bottleneck14-BN1'
+    # 'layer4.0.conv2': 'Bottleneck14-Conv2'
+    # 'layer4.0.bn2': 'Bottleneck14-BN2'
+    # 'layer4.0.conv3': 'Bottleneck14-Conv3'
+    # 'layer4.0.bn3': 'Bottleneck14-BN3'
+    # 'layer4.0.relu': 'Bottleneck14-Relu'
+    # 'layer4.0.downsample': 'Bottleneck14-Downsample'
+    # 'layer4.0.downsample.0': 'Bottleneck14-Downsample-Conv'
+    'layer4.0.downsample.1': 'Bottleneck14-Downsample-BN'
+    # 'layer4.1': 'Bottleneck15'
+    # 'layer4.1.conv1': 'Bottleneck15-Conv1'
+    # 'layer4.1.bn1': 'Bottleneck15-BN1'
+    # 'layer4.1.conv2': 'Bottleneck15-Conv2'
+    'layer4.1.bn2': 'Bottleneck15-BN2'
+
+
+    
   
 modalities:
   ephys:
     - monkeyF
     - monkeyN
   fmri:
-    - 01
+    - "01"
+    - "02"
+    - "03"
+    - "04"
+    - "05"
+    - "06"
+    - "07"
+    - "08"
   eeg:
     - "01"
     - "02"
@@ -34,9 +190,3 @@ modalities:
     - "08"
     - "09"
     - "10"
-
-
-metrics:
-  - "correcting_cka_alignment/cka"
-  - "correcting_cka_alignment/cka_debiased" 
-  - "brainscore/rsa-correlation-spearman"
