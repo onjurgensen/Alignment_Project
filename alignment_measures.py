@@ -71,7 +71,11 @@ def ridge_regression(X_train, X_test, Y_train, Y_test, alpha=1.0, standardize=Fa
     return r2_score(y_pred=Y_pred, y_true=Y_test, multioutput="raw_values")
 
 
-def ridge_regression_cv(X_train, Y_train, X_test, Y_test, alphas=np.logspace(-8, 8, 17), standardize=False, multioutput = "raw_values"):
+def ridge_regression_cv(X_train, Y_train, X_test, Y_test, alphas=np.logspace(-8, 8, 17), standardize=False, 
+                        multioutput = "raw_values", return_predictions = False):
+    """
+    return predictions was added to speed uo versa calculations
+    """
 
     if standardize:
         # Standardize the features
@@ -92,7 +96,14 @@ def ridge_regression_cv(X_train, Y_train, X_test, Y_test, alphas=np.logspace(-8,
         Y_pred = scaler_Y.inverse_transform(Y_pred)
         Y_test = scaler_Y.inverse_transform(Y_test)
 
-    return r2_score(y_pred=Y_pred, y_true=Y_test, multioutput=multioutput)
+    r2_scores = r2_score(y_pred=Y_pred, y_true=Y_test, multioutput=multioutput)
+    
+    if return_predictions == False:
+        return r2_scores
+    else:
+        return r2_scores, Y_pred
+
+    
 
 
 
@@ -289,17 +300,14 @@ def cka(X, Y, output = "score"):
     
     return cka_score(X, Y)
 
-def cka2(X, Y, output = "score"):
+def cka_debiased(X, Y):
     """
     Compute the linear Centered Kernel Alignment (CKA) between two matrices.
-
-    output: str
-        - "score", distance=squared_euclidean", "distance=euclidean", or "distance=angular"
 
     Returns:
     - CKA value.
     """
     # Compute the CKA value
-    cka_score = similarity.make(f"measure/brainscore/cka-kernel=linear-hsic=gretton-{output}")
+    cka_score = similarity.make("correcting_cka_alignment/cka_debiased")
     
     return cka_score(X, Y)

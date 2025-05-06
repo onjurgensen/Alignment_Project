@@ -202,6 +202,7 @@ def get_fmri(subject, hemisphere, path_to_fmri = None):
         roi_masks: dict_keys(['V1', 'V4', 'FFA'])
     
     """
+    
     if path_to_fmri is None:
         path_to_fmri = os.path.expanduser("~/Documents/BrainAlign_Data/NSD_preprocessed")
 
@@ -212,6 +213,7 @@ def get_fmri(subject, hemisphere, path_to_fmri = None):
     # load two mask files
     mask_early = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/{hemisphere}.prf-visualrois_challenge_space.npy"))
     mask_ffa = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/{hemisphere}.floc-faces_challenge_space.npy"))
+    
     # load two mapping files
     mapping_early = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/mapping_prf-visualrois.npy"),
                             allow_pickle=True).item()
@@ -243,6 +245,118 @@ def get_fmri(subject, hemisphere, path_to_fmri = None):
     }
 
     return output
+
+
+def get_fmri_2 (subject, hemisphere, path_to_fmri = None):
+    """
+    Dataloader for fMRI data:
+    Args:
+        subject (str): Subject ID (e.g. "01")
+        hemishere (str): Hemishere name (e.g. "lh" or "rh")
+    Returns:
+        dict_keys(['train_data', 'test_data', 'roi_masks'])
+        roi_masks: dict_keys(['V1', 'V4', 'FFA'])
+    
+    """
+    
+    if path_to_fmri is None:
+        path_to_fmri = os.path.expanduser("~/Documents/BrainAlign_Data/NSD_preprocessed")
+
+    # load training and test data
+    train_data = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/training_split/training_fmri/{hemisphere}_training_fmri.npy"))
+    test_data = np.load(os.path.join(path_to_fmri, f"test_data/subj{subject}/test_split/test_fmri/{hemisphere}_test_fmri.npy"))
+
+    # load two mask files
+    # challenge space (for indexing of data)
+    mask_early = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/{hemisphere}.prf-visualrois_challenge_space.npy"))
+    mask_ffa = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/{hemisphere}.floc-faces_challenge_space.npy"))
+    # fsaverage space (for visualization)
+    mask_early_fsl = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/{hemisphere}.prf-visualrois_fsaverage_space.npy"))
+    mask_ffa_fsl = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/{hemisphere}.floc-faces_fsaverage_space.npy"))
+    
+    # load two mapping files
+    mapping_early = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/mapping_prf-visualrois.npy"),
+                            allow_pickle=True).item()
+    mapping_ffa = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/mapping_floc-faces.npy"),
+                        allow_pickle=True).item()
+    
+
+    # create masks
+    V1_keys = [k for k, v in mapping_early.items() if v in ['V1v', 'V1d']]
+    V1_mask = np.isin(mask_early, V1_keys)
+    V1_mask_fsl = np.isin(mask_early_fsl, V1_keys)
+
+    V4_keys = [k for k, v in mapping_early.items() if v in ['hV4']]
+    V4_mask = np.isin(mask_early, V4_keys)
+    V4_mask_fsl = np.isin(mask_early_fsl, V4_keys)
+
+    FFA_keys = [k for k, v in mapping_ffa.items() if v in ['FFA-1', 'FFA-2']]
+    FFA_mask = np.isin(mask_ffa, FFA_keys)
+    FFA_mask_fsl = np.isin(mask_ffa_fsl, FFA_keys)
+    
+    # combine the masks
+    combined_mask = np.zeros_like(FFA_mask, dtype=int)  # Initialize with zeros
+    fsl_mask = np.zeros_like(FFA_mask_fsl, dtype=int)  # Initialize with zeros
+
+    mask_mapping = {
+        1: "V1",
+        2: "V4",
+        3: "FFA"
+    }
+
+    combined_mask[V1_mask] = 1 ; fsl_mask[V1_mask_fsl] = 1
+    combined_mask[V4_mask] = 2 ; fsl_mask[V4_mask_fsl] = 2
+    combined_mask[FFA_mask] = 3; fsl_mask[FFA_mask_fsl] = 3
+
+    output = {
+        'train_data': train_data,
+        'test_data': test_data,
+        'mask_challenge': combined_mask,
+        'mask_fsl': fsl_mask,
+        'mask_mapping': mask_mapping,
+
+    }
+
+    return output
+
+
+def get_fmri_concat_hemispheres(lh_dat, rh_dat):
+
+    """
+    Function to concatenate hemisphere data while preserving indices with respect to fsl average space
+    
+    """
+    
+    train_data = np.hstack([lh_dat["train_data"], rh_dat["train_data"]])
+    test_data = np.hstack([lh_dat["test_data"], rh_dat["test_data"]])
+
+    mask_challenge = {
+        'roi' : np.concatenate([lh_dat["mask_challenge"], rh_dat["mask_challenge"]]),
+        'hemisphere' : np.concatenate([np.repeat('lh', lh_dat["mask_challenge"].shape), np.repeat('rh', rh_dat["mask_challenge"].shape)]),
+    }
+
+    mask_fsl = {
+        'roi' : np.concatenate([lh_dat["mask_fsl"], rh_dat["mask_fsl"]]), 
+        'hemisphere' : np.concatenate([np.repeat('lh', lh_dat["mask_fsl"].shape), np.repeat('rh', rh_dat["mask_fsl"].shape)])
+    }
+
+
+    output = {
+        'train_data': train_data,
+        'test_data': test_data,
+        'mask_challenge': mask_challenge,
+        'mask_fsl': mask_fsl,
+        'mask_mapping': rh_dat['mask_mapping'],
+
+    }
+
+    return output
+
+
+
+
+
+
 
 def get_model(model_name, seed):
     if model_name == 'alexnet':
@@ -426,8 +540,6 @@ def extract_features(model, dataloader, device, return_nodes=None, unflatten=Tru
                 all_features[key].append(activation.detach().cpu())  # Detach and move to CPU for storage
     # Concatenate all batch features for each layer
     all_features = {key: torch.cat(features, dim=0) for key, features in all_features.items()}
-
-
     
     return all_features
 
