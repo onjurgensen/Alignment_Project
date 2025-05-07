@@ -111,6 +111,11 @@ def ridge_regression_cv(X_train, Y_train, X_test, Y_test, alphas=np.logspace(-8,
 
 
 def rsa(X, Y, metric='correlation', method='spearman'):
+
+    """
+    use 'correlation' or 'squared_euclidean' for metric
+    
+    """
     if metric != "cosine":
         rsa = similarity.make(f"measure/rsatoolbox/rsa-rdm={metric}-compare={method}")
     else:
