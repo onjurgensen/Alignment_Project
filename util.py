@@ -1,6 +1,7 @@
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
+from torchvision.models import vit_b_16, ViT_B_16_Weights
 import h5py
 import numpy as np
 import torch 
@@ -117,41 +118,42 @@ def get_nsd_dataloader(transform, train_imgs_paths, test_imgs_paths, batch_size=
 
 ################################# Low-level Functions: Neurodata
 
-def get_tvsd(subject_file_path, normalized=True, device="cuda", group_name = "train_MUA", monkey = None):
-    """Dataloader for neurodata from TVSD dataset, this function will return the data for a single subject separated into V1, V4, IT"""
+def get_tvsd(subject, device="cuda", group_name = "test_MUA", snr_cutoff = 2):
+
+    """
+    Load the TVSD data from the specified subject file.
+    Args:
+        subject (str): Subject identifier ("F" or "N").
+        device (str): Device to load the data on ("cuda" or "cpu").
+        group_name (str): test_MUA, train_MUA, or test_MUA_rep
+
+    """
+
+    subject_file_path = os.path.expanduser(f"~/Documents/BrainAlign_Data/THINGS_normMUA_{subject}.mat")
 
     # Load the data from the h5 file
     with h5py.File(subject_file_path, "r") as file:
         data_dict = {key: torch.tensor(np.array(file[key]), dtype=torch.float32, device=device) for key in file.keys()}
-
-    train_mua = data_dict.get(group_name)
     
-    if monkey == "n":
-        V1 = train_mua[:, :512]  #1:512 =  V1
-        V4 = train_mua[:, 512:768] #513:768 = V4
-        IT = train_mua[:, 768:1024] #769:1024 = IT
-    elif monkey == "f":
-        V1 = train_mua[:, :512] #1:512 =  V1
-        V4 = train_mua[:, 833:1024] #833:1024 = V4
-        IT = train_mua[:, 513:832] #513:832 = IT
+    # load data from dict
+    object = data_dict[group_name]
 
-    
-    return V1, V4, IT  # Return the data for V1, V4, IT
+    # remove noisy channels
+    if snr_cutoff is not None:
+        noise_mask = data_dict['SNR'].mean(axis=0) >= snr_cutoff
+        if group_name == 'test_MUA_reps':
+            object = object[:, :, noise_mask]
+        else:
+            object = object[:, noise_mask]
+        
 
-# get custom object from tvsd file (e.g. SNR)
+    rois = np.concatenate([['V1' for i in range(513)], ['V4' for i in range(833, 1024)], ['IT' for i in range(513, 833)]]) if subject == 'F' else \
+           np.concatenate([['V1' for i in range(513)], ['V4' for i in range(513, 769)], ['IT' for i in range(769, 1024)]]) if subject == 'N' else \
+           None
+    if snr_cutoff is not None:
+        rois = rois[noise_mask]
+    return object, rois
 
-def get_tvsd_custom(subject_file_path, device="cuda", group_name = ""):
-
-    """
-    get custom object from tvsd file (e.g. SNR)
-    """
-    # Load the data from the h5 file
-    with h5py.File(subject_file_path, "r") as file:
-        data_dict = {key: torch.tensor(np.array(file[key]), dtype=torch.float32, device=device) for key in file.keys()}
-
-    object = data_dict.get(group_name)
-
-    return(object)
 
 
 def get_eeg(subject, path_to_eeg = None, group = None, downsample_factor = None, average_trials = False, time_range = None):
@@ -192,62 +194,6 @@ def get_eeg(subject, path_to_eeg = None, group = None, downsample_factor = None,
 
 
 def get_fmri(subject, hemisphere, path_to_fmri = None):
-    """
-    Dataloader for fMRI data:
-    Args:
-        subject (str): Subject ID (e.g. "01")
-        hemishere (str): Hemishere name (e.g. "lh" or "rh")
-    Returns:
-        dict_keys(['train_data', 'test_data', 'roi_masks'])
-        roi_masks: dict_keys(['V1', 'V4', 'FFA'])
-    
-    """
-    
-    if path_to_fmri is None:
-        path_to_fmri = os.path.expanduser("~/Documents/BrainAlign_Data/NSD_preprocessed")
-
-
-    train_data = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/training_split/training_fmri/{hemisphere}_training_fmri.npy"))
-    test_data = np.load(os.path.join(path_to_fmri, f"test_data/subj{subject}/test_split/test_fmri/{hemisphere}_test_fmri.npy"))
-
-    # load two mask files
-    mask_early = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/{hemisphere}.prf-visualrois_challenge_space.npy"))
-    mask_ffa = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/{hemisphere}.floc-faces_challenge_space.npy"))
-    
-    # load two mapping files
-    mapping_early = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/mapping_prf-visualrois.npy"),
-                            allow_pickle=True).item()
-    mapping_ffa = np.load(os.path.join(path_to_fmri, f"train_data/subj{subject}/roi_masks/mapping_floc-faces.npy"),
-                        allow_pickle=True).item()
-    
-    # create masks
-    # create masks for brain areas 
-    keys = [k for k, v in mapping_early.items() if v in ['V1v', 'V1d']]
-    V1_mask = np.isin(mask_early, keys)
-
-    keys = [k for k, v in mapping_early.items() if v in ['hV4']]
-    V4_mask = np.isin(mask_early, keys)
-
-    keys = [k for k, v in mapping_ffa.items() if v in ['FFA-1', 'FFA-2']]
-    FFA_mask = np.isin(mask_ffa, keys)
-
-    # create dict for masks
-    masks = {
-        'V1': V1_mask,
-        'V4': V4_mask,
-        'FFA': FFA_mask
-    }
-
-    output = {
-        'train_data': train_data,
-        'test_data': test_data,
-        'roi_masks': masks
-    }
-
-    return output
-
-
-def get_fmri_2 (subject, hemisphere, path_to_fmri = None):
     """
     Dataloader for fMRI data:
     Args:
@@ -353,11 +299,6 @@ def get_fmri_concat_hemispheres(lh_dat, rh_dat):
     return output
 
 
-
-
-
-
-
 def get_model(model_name, seed):
     if model_name == 'alexnet':
         #model = torch.hub.load('pytorch/vision:v0.6.0', 'alexnet', pretrained=True)
@@ -386,6 +327,13 @@ def get_model(model_name, seed):
         state_dict = checkpoint['model']
 
         model.load_state_dict(state_dict)
+        model.eval()
+    
+    elif model_name == 'vit_b_16':
+
+        weights = ViT_B_16_Weights.IMAGENET1K_V1
+        model = vit_b_16(weights=weights)
+
         model.eval()
 
     return model
@@ -470,11 +418,6 @@ def get_dataloader(dataset_name, batch_size=128, num_workers=4, subject = None):
         train_img_dir = os.path.join(path_to_fmri, f"train_data/subj{subject}/training_split/training_images")
         test_img_dir = os.path.join(path_to_fmri, f"test_data/subj{subject}/test_split/test_images")
 
-        #train_img_list = os.listdir(train_img_dir)
-        #train_img_list.sort()
-        #test_img_list = os.listdir(test_img_dir)
-        #test_img_list.sort()
-
         train_imgs_paths = sorted(list(Path(train_img_dir).iterdir()))
         test_imgs_paths = sorted(list(Path(test_img_dir).iterdir()))
 
@@ -497,6 +440,7 @@ def get_dataloader(dataset_name, batch_size=128, num_workers=4, subject = None):
     
 
 ################################## Feature Extraction functions
+
 import torch
 import tqdm
 from torchvision.models.feature_extraction import create_feature_extractor
@@ -543,3 +487,109 @@ def extract_features(model, dataloader, device, return_nodes=None, unflatten=Tru
     
     return all_features
 
+
+
+
+############################ layer depth functions
+
+def get_layer_depth(model_name, layer_name, normalize = False):
+
+    if model_name == 'alexnet':
+        layers= [
+            'Conv1', 'Relu1', 'MaxPool1',
+            'Conv2', 'Relu2', 'MaxPool2',
+            'Conv3', 'Relu3',
+            'Conv4', 'Relu4',
+            'Conv5', 'Relu5', 'MaxPool5',
+            # 'avgpool',
+            # 'classifier.0',
+            # 'classifier.1',
+            # 'classifier.2',
+            # 'classifier.3',
+            # 'classifier.4',
+            # 'classifier.5',
+            # 'classifier.6',
+        ]
+        layer_dict = dict(enumerate(layers))
+    elif model_name == 'resnet50':
+        layers = [
+            'conv1', 'bn1', 'relu', 'maxpool',
+            'layer1.0', 'layer1.0.conv1', 'layer1.0.bn1', 'layer1.0.conv2', 'layer1.0.bn2', 'layer1.0.conv3', 'layer1.0.bn3', 'layer1.0.relu', 'layer1.0.downsample', 'layer1.0.downsample.0', 'layer1.0.downsample.1',
+            'layer1.1', 'layer1.1.conv1', 'layer1.1.bn1', 'layer1.1.conv2', 'layer1.1.bn2', 'layer1.1.conv3', 'layer1.1.bn3', 'layer1.1.relu',
+            'layer1.2', 'layer1.2.conv1', 'layer1.2.bn1', 'layer1.2.conv2', 'layer1.2.bn2', 'layer1.2.conv3', 'layer1.2.bn3', 'layer1.2.relu',
+            'layer2.0', 'layer2.0.conv1', 'layer2.0.bn1', 'layer2.0.conv2', 'layer2.0.bn2', 'layer2.0.conv3', 'layer2.0.bn3', 'layer2.0.relu', 'layer2.0.downsample', 'layer2.0.downsample.0', 'layer2.0.downsample.1',
+            'layer2.1', 'layer2.1.conv1', 'layer2.1.bn1', 'layer2.1.conv2', 'layer2.1.bn2', 'layer2.1.conv3', 'layer2.1.bn3', 'layer2.1.relu',
+            'layer2.2', 'layer2.2.conv1', 'layer2.2.bn1', 'layer2.2.conv2', 'layer2.2.bn2', 'layer2.2.conv3', 'layer2.2.bn3', 'layer2.2.relu',
+            'layer2.3', 'layer2.3.conv1', 'layer2.3.bn1', 'layer2.3.conv2', 'layer2.3.bn2', 'layer2.3.conv3', 'layer2.3.bn3', 'layer2.3.relu',
+            'layer3.0', 'layer3.0.conv1', 'layer3.0.bn1', 'layer3.0.conv2', 'layer3.0.bn2', 'layer3.0.conv3', 'layer3.0.bn3', 'layer3.0.relu', 'layer3.0.downsample', 'layer3.0.downsample.0', 'layer3.0.downsample.1',
+            'layer3.1', 'layer3.1.conv1', 'layer3.1.bn1', 'layer3.1.conv2', 'layer3.1.bn2', 'layer3.1.conv3', 'layer3.1.bn3', 'layer3.1.relu',
+            'layer3.2', 'layer3.2.conv1', 'layer3.2.bn1', 'layer3.2.conv2', 'layer3.2.bn2', 'layer3.2.conv3', 'layer3.2.bn3', 'layer3.2.relu',
+            'layer3.3', 'layer3.3.conv1', 'layer3.3.bn1', 'layer3.3.conv2', 'layer3.3.bn2', 'layer3.3.conv3', 'layer3.3.bn3', 'layer3.3.relu',
+            'layer3.4', 'layer3.4.conv1', 'layer3.4.bn1', 'layer3.4.conv2', 'layer3.4.bn2', 'layer3.4.conv3', 'layer3.4.bn3', 'layer3.4.relu',
+            'layer3.5', 'layer3.5.conv1', 'layer3.5.bn1', 'layer3.5.conv2', 'layer3.5.bn2', 'layer3.5.conv3', 'layer3.5.bn3', 'layer3.5.relu',
+            'layer4.0', 'layer4.0.conv1', 'layer4.0.bn1', 'layer4.0.conv2', 'layer4.0.bn2', 'layer4.0.conv3', 'layer4.0.bn3', 'layer4.0.relu', 'layer4.0.downsample', 'layer4.0.downsample.0', 'layer4.0.downsample.1',
+            'layer4.1', 'layer4.1.conv1', 'layer4.1.bn1', 'layer4.1.conv2', 'layer4.1.bn2',
+            'layer4.2', 'layer4.2.conv1', 'layer4.2.bn1', 'layer4.2.conv2', 'layer4.2.bn2', 'layer4.2.conv3', 'layer4.2.bn3', 'layer4.2.relu',
+            #'avgpool', 'fc'
+        ]
+        layer_dict = dict(enumerate(layers))
+    elif model_name == 'vit_b_16':
+        vit_b_16_layers = [
+            "conv_proj", "encoder", "encoder.dropout", "encoder.layers",
+            
+            "layer_0", 
+            "layer_0.ln_1", "layer_0.self_attention", "layer_0.self_attention.out_proj", "layer_0.dropout", "layer_0.ln_2",
+            "layer_0.mlp", "layer_0.mlp.0", "layer_0.mlp.1", "layer_0.mlp.2", "layer_0.mlp.3", "layer_0.mlp.4",
+            "layer_1",
+            "layer_1.ln_1", "layer_1.self_attention", "layer_1.self_attention.out_proj", "layer_1.dropout", "layer_1.ln_2",
+            "layer_1.mlp", "layer_1.mlp.0", "layer_1.mlp.1", "layer_1.mlp.2", "layer_1.mlp.3", "layer_1.mlp.4",
+            "layer_2",
+            "layer_2.ln_1", "layer_2.self_attention", "layer_2.self_attention.out_proj", "layer_2.dropout", "layer_2.ln_2",
+            "layer_2.mlp", "layer_2.mlp.0", "layer_2.mlp.1", "layer_2.mlp.2", "layer_2.mlp.3","layer_2.mlp.4",
+            "layer_3",
+            "layer_3.ln_1", "layer_3.self_attention", "layer_3.self_attention.out_proj", "layer_3.dropout", "layer_3.ln_2",
+            "layer_3.mlp", "layer_3.mlp.0", "layer_3.mlp.1", "layer_3.mlp.2", "layer_3.mlp.3", "layer_3.mlp.4",
+            "layer_4",
+            "layer_4.ln_1", "layer_4.self_attention", "layer_4.self_attention.out_proj", "layer_4.dropout", "layer_4.ln_2",
+            "layer_4.mlp", "layer_4.mlp.0", "layer_4.mlp.1", "layer_4.mlp.2", "layer_4.mlp.3", "layer_4.mlp.4", "layer_5",
+            "layer_5",
+            "layer_5.ln_1", "layer_5.self_attention", "layer_5.self_attention.out_proj", "layer_5.dropout", "layer_5.ln_2",
+            "layer_5.mlp", "layer_5.mlp.0", "layer_5.mlp.1", "layer_5.mlp.2", "layer_5.mlp.3", "layer_5.mlp.4",
+            "layer_6",
+            "layer_6.ln_1", "layer_6.self_attention", "layer_6.self_attention.out_proj", "layer_6.dropout", "layer_6.ln_2",
+            "layer_6.mlp", "layer_6.mlp.0", "layer_6.mlp.1", "layer_6.mlp.2", "layer_6.mlp.3", "layer_6.mlp.4",
+            "layer_7",
+            "layer_7.ln_1", "layer_7.self_attention", "layer_7.self_attention.out_proj", "layer_7.dropout", "layer_7.ln_2",
+            "layer_7.mlp", "layer_7.mlp.0", "layer_7.mlp.1", "layer_7.mlp.2", "layer_7.mlp.3", "layer_7.mlp.4",
+            "layer_8",
+            "layer_8.ln_1", "layer_8.self_attention", "layer_8.self_attention.out_proj", "layer_8.dropout", "layer_8.ln_2",
+            "layer_8.mlp", "layer_8.mlp.0", "layer_8.mlp.1", "layer_8.mlp.2", "layer_8.mlp.3","layer_8.mlp.4", 
+            "layer_9",
+            "layer_9.ln_1", "layer_9.self_attention", "layer_9.self_attention.out_proj", "layer_9.dropout", "layer_9.ln_2",
+            "layer_9.mlp", "layer_9.mlp.0", "layer_9.mlp.1","layer_9.mlp.2", "layer_9.mlp.3", "layer_9.mlp.4",
+            "layer_10",
+            "layer_10.ln_1", "layer_10.self_attention", "layer_10.self_attention.out_proj", "layer_10.dropout", "layer_10.ln_2",
+            "layer_10.mlp", "layer_10.mlp.0", "layer_10.mlp.1", "layer_10.mlp.2", "layer_10.mlp.3", "layer_10.mlp.4",
+            "layer_11",
+            "layer_11.ln_1", "layer_11.self_attention", "layer_11.self_attention.out_proj", "layer_11.dropout", "layer_11.ln_2",
+            "layer_11.mlp", "layer_11.mlp.0", "layer_11.mlp.1", "layer_11.mlp.2", "layer_11.mlp.3", "layer_11.mlp.4",
+            
+            "encoder.ln", "heads", "heads.head"
+        ]
+    else:
+        raise ValueError("Model not supported for layer depth calculation.")
+    
+    layer_depth = [key for key, value in layer_dict.items() if value == layer_name][0]
+    
+    if normalize:
+        max = list(layer_dict.keys())[-1]
+        layer_depth = layer_depth / max
+
+    return layer_depth
+    
+
+    
+    
+
+    
+    

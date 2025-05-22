@@ -1,6 +1,7 @@
 # Import necessary libraries
 import numpy as np
 import pandas as pd
+import torch
 
 # regression
 from sklearn.cross_decomposition import PLSRegression
@@ -8,23 +9,19 @@ from sklearn.linear_model import Ridge
 from sklearn.linear_model import RidgeCV
 from sklearn.metrics import r2_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.random_projection import SparseRandomProjection
 from sklearn.model_selection import KFold
+from torchmetrics.functional import pearson_corrcoef
 
 # linear shape metric
 from netrep.metrics import LinearMetric
 import similarity
 
-# RSA
-from scipy.spatial.distance import pdist, squareform
-from scipy.stats import kendalltau
-from scipy.stats import pearsonr
-from scipy.stats import spearmanr
+
 
 
 ######################### Regression ##########################
 
-def pls_regression(X_train, X_test, Y_train, Y_test, n_components=1, standardize=False):
+def pls_regression(X_train, X_test, Y_train, Y_test, n_components=1, multioutput= "raw_values", standardize=False, permute = False):
     """
     Partial Least Squares Regression (PLS) adapted from sklearn.
     Returns the R^2 score for PLS regression between two matrices.
@@ -35,19 +32,36 @@ def pls_regression(X_train, X_test, Y_train, Y_test, n_components=1, standardize
     - Move data to CPU and convert to numpy before calling this function.
     """
     if standardize:
-        scaler = StandardScaler()
-        X_train = scaler.fit_transform(X_train)
-        X_test = scaler.transform(X_test)
+        scaler_X = StandardScaler()
+        scaler_Y = StandardScaler()
+        X_train = scaler_X.fit_transform(X_train)
+        X_test = scaler_Y.transform(X_test)
 
     predictor = PLSRegression(n_components=n_components)
     predictor.fit(X_train, Y_train)
     Y_pred = predictor.predict(X_test)
 
-    return r2_score(y_pred=Y_pred, y_true=Y_test, multioutput="raw_values")
+    if standardize:
+        Y_pred = scaler_Y.inverse_transform(Y_pred)
+        Y_test = scaler_Y.inverse_transform(Y_test)
+    
+    r2_scores = r2_score(y_pred=Y_pred, y_true=Y_test, multioutput=multioutput)
+    pearson_scores = pearson_corrcoef(torch.tensor(Y_pred), torch.tensor(Y_test)).numpy()
+
+    if permute:
+        Y_test_permuted = Y_test[np.random.permutation(Y_test.shape[0])]
+        r2_scores_permuted = r2_score(y_pred=Y_pred, y_true=Y_test_permuted, multioutput=multioutput)
+        pearson_scores_permuted = pearson_corrcoef(torch.tensor(Y_pred), torch.tensor(Y_test_permuted)).numpy()
+        
+        return r2_scores, pearson_scores, r2_scores_permuted, pearson_scores_permuted
+    
+    return r2_scores, pearson_scores
 
 
 
-def ridge_regression(X_train, X_test, Y_train, Y_test, alpha=1.0, standardize=False):
+
+def ridge_regression(X_train, X_test, Y_train, Y_test, alpha=1.0, multioutput= "raw_values", standardize=False,
+                     return_predictions = False, permute = False):
     
     if standardize:
         # Standardize the features
@@ -68,11 +82,25 @@ def ridge_regression(X_train, X_test, Y_train, Y_test, alpha=1.0, standardize=Fa
         Y_pred = scaler_Y.inverse_transform(Y_pred)
         Y_test = scaler_Y.inverse_transform(Y_test)
 
-    return r2_score(y_pred=Y_pred, y_true=Y_test, multioutput="raw_values")
+    r2_scores = r2_score(y_pred=Y_pred, y_true=Y_test, multioutput=multioutput)
+    pearson_scores = pearson_corrcoef(torch.tensor(Y_pred), torch.tensor(Y_test)).numpy()
+
+    if permute & return_predictions:
+        # Permutation test
+        Y_test_permuted = Y_test[np.random.permutation(Y_test.shape[0])]
+        r2_scores_permuted = r2_score(y_pred=Y_pred, y_true=Y_test_permuted, multioutput=multioutput)
+        pearson_scores_permuted = pearson_corrcoef(torch.tensor(Y_pred), torch.tensor(Y_test_permuted)).numpy()
+
+        return r2_scores, pearson_scores, r2_scores_permuted, pearson_scores_permuted, Y_pred
+    
+    if return_predictions == False:
+        return r2_scores, pearson_scores
+    else:
+        return r2_scores, pearson_scores, Y_pred
 
 
 def ridge_regression_cv(X_train, Y_train, X_test, Y_test, alphas=np.logspace(-8, 8, 17), standardize=False, 
-                        multioutput = "raw_values", return_predictions = False):
+                        multioutput = "raw_values", return_predictions = False, permute = False):
     """
     return predictions was added to speed uo versa calculations
     """
@@ -97,11 +125,22 @@ def ridge_regression_cv(X_train, Y_train, X_test, Y_test, alphas=np.logspace(-8,
         Y_test = scaler_Y.inverse_transform(Y_test)
 
     r2_scores = r2_score(y_pred=Y_pred, y_true=Y_test, multioutput=multioutput)
+    pearson_scores = pearson_corrcoef(torch.tensor(Y_pred), torch.tensor(Y_test)).numpy()
+
+
+
+    if permute & return_predictions:
+        # Permutation test
+        Y_test_permuted = Y_test[np.random.permutation(Y_test.shape[0])]
+        r2_scores_permuted = r2_score(y_pred=Y_pred, y_true=Y_test_permuted, multioutput=multioutput)
+        pearson_scores_permuted = pearson_corrcoef(torch.tensor(Y_pred), torch.tensor(Y_test_permuted)).numpy()
+
+        return r2_scores, pearson_scores, r2_scores_permuted, pearson_scores_permuted, Y_pred
     
     if return_predictions == False:
-        return r2_scores
+        return r2_scores, pearson_scores
     else:
-        return r2_scores, Y_pred
+        return r2_scores, pearson_scores, Y_pred
 
     
 
@@ -210,7 +249,7 @@ def versa(X_train, Y_train, X_test, Y_test, metrics= ["correlation"], methods = 
 ########################## Linear Shape Metric ##########################
 
 
-def linear_shape_metric(X_train, Y_train, X_test, Y_test, alpha = 1, score_method = "angular", zero_pad = True):
+def linear_shape_metric(X_train, Y_train, X_test, Y_test, alpha = 1, score_method = "angular", zero_pad = True, permute = False):
     """
     Compute the linear shape metric between two sets of data.
     
@@ -232,10 +271,18 @@ def linear_shape_metric(X_train, Y_train, X_test, Y_test, alpha = 1, score_metho
 
     # Fit the metric to the training data
     metric.fit(X_train, Y_train)
+    # get score on training data
+    score_train = metric.score(X_train, Y_train)
     # get score on test data
     score = metric.score(X_test, Y_test)
-    
-    return score
+
+    if permute == True:
+        # Permutation test
+        Y_test_permuted = Y_test[np.random.permutation(Y_test.shape[0])]
+        score_permuted = metric.score(X_test, Y_test_permuted)
+        return score_train, score, score_permuted
+    if permute == False:
+        return score_train, score
 
 
 def linear_shape_metric_cv(X_train, Y_train, X_test, Y_test, alphas=np.linspace(0, 1, 11), score_method="angular", cv_folds=5):
