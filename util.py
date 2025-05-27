@@ -534,9 +534,9 @@ def get_layer_depth(model_name, layer_name, normalize = False):
         ]
         layer_dict = dict(enumerate(layers))
     elif model_name == 'vit_b_16':
-        vit_b_16_layers = [
+        layers = [
             "conv_proj", "encoder", "encoder.dropout", "encoder.layers",
-            
+
             "layer_0", 
             "layer_0.ln_1", "layer_0.self_attention", "layer_0.self_attention.out_proj", "layer_0.dropout", "layer_0.ln_2",
             "layer_0.mlp", "layer_0.mlp.0", "layer_0.mlp.1", "layer_0.mlp.2", "layer_0.mlp.3", "layer_0.mlp.4",
@@ -574,8 +574,11 @@ def get_layer_depth(model_name, layer_name, normalize = False):
             "layer_11.ln_1", "layer_11.self_attention", "layer_11.self_attention.out_proj", "layer_11.dropout", "layer_11.ln_2",
             "layer_11.mlp", "layer_11.mlp.0", "layer_11.mlp.1", "layer_11.mlp.2", "layer_11.mlp.3", "layer_11.mlp.4",
             
+            "layer_12.self_attention", # what is this?
+
             "encoder.ln", "heads", "heads.head"
         ]
+        layer_dict = dict(enumerate(layers))
     else:
         raise ValueError("Model not supported for layer depth calculation.")
     
