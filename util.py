@@ -145,14 +145,19 @@ def get_tvsd(subject, device="cuda", group_name = "test_MUA", snr_cutoff = 2):
             object = object[:, :, noise_mask]
         else:
             object = object[:, noise_mask]
-        
+    
+    roi_dict = {
+        'V1': 1,
+        'V4': 2,
+        'IT': 3,
+    }
 
-    rois = np.concatenate([['V1' for i in range(513)], ['V4' for i in range(833, 1024)], ['IT' for i in range(513, 833)]]) if subject == 'F' else \
-           np.concatenate([['V1' for i in range(513)], ['V4' for i in range(513, 769)], ['IT' for i in range(769, 1024)]]) if subject == 'N' else \
+    roi_mask = np.concatenate([[roi_dict['V1'] for i in range(513)], [roi_dict['V4'] for i in range(833, 1024)], [roi_dict['IT'] for i in range(513, 833)]])  if subject == 'F' else \
+               np.concatenate([[roi_dict['V1'] for i in range(513)], [roi_dict['V4'] for i in range(513, 769)],  [roi_dict['IT'] for i in range(769, 1024)]]) if subject == 'N' else \
            None
     if snr_cutoff is not None:
-        rois = rois[noise_mask]
-    return object, rois
+        roi_mask = roi_mask[noise_mask]
+    return object, roi_mask, roi_dict
 
 
 
@@ -371,7 +376,7 @@ def get_dataloader(dataset_name, batch_size=128, num_workers=4, subject = None):
     ])
 
     # Check which dataset and respond accordingly
-    if dataset_name == 'tvsd':
+    if dataset_name == 'ephys':
         
         # define directory where THINGS images are stored
         THINGS_PATH = os.path.expanduser("~/Documents/BrainAlign_Data/things_images/")

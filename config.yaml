@@ -207,8 +207,8 @@ models:
   
 modalities:
   ephys:
-    - monkeyF
-    - monkeyN
+    - F
+    - N
   fmri:
     - "01"
     - "02"
