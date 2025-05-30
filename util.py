@@ -151,10 +151,14 @@ def get_tvsd(subject, device="cuda", group_name = "test_MUA", snr_cutoff = 2):
         'V4': 2,
         'IT': 3,
     }
+    #     rois = {
+    #     'monkeyF': {i: 'V1' for i in range(513)} | {i: 'V4' for i in range(833, 1024)} | {i: 'IT' for i in range(513, 833)},
+    #     'monkeyN': {i: 'V1' for i in range(513)} | {i: 'V4' for i in range(513, 769)} | {i: 'IT' for i in range(769, 1024)},
+    # }
 
     roi_mask = np.concatenate([[roi_dict['V1'] for i in range(513)], [roi_dict['V4'] for i in range(833, 1024)], [roi_dict['IT'] for i in range(513, 833)]])  if subject == 'F' else \
                np.concatenate([[roi_dict['V1'] for i in range(513)], [roi_dict['V4'] for i in range(513, 769)],  [roi_dict['IT'] for i in range(769, 1024)]]) if subject == 'N' else \
-           None
+               None
     if snr_cutoff is not None:
         roi_mask = roi_mask[noise_mask]
     return object, roi_mask, roi_dict
