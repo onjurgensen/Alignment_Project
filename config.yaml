@@ -11,8 +11,8 @@ model_seeds:
     - 3
     - 4
     - 5
-  # vit_b_16:
-  #   - 'torchvision_IMAGENET1K_V1'
+  vit_b_16:
+    - 'torchvision_IMAGENET1K_V1'
 
 
 models:
@@ -185,32 +185,171 @@ models:
     'layer4.2.relu': 'layer4.2.relu'
     'avgpool': 'avgpool'
     'fc': 'fc'
-  # vit_b_16:
-  #   - {"encoder.layers.encoder_layer_0.self_attention": "Layer1_SelfAttention"}
-  #   - {"encoder.layers.encoder_layer_0.mlp": "Layer1_MLP"}
-  #   - {"encoder.layers.encoder_layer_1.self_attention": "Layer2_SelfAttention"}
-  #   - {"encoder.layers.encoder_layer_1.mlp": "Layer2_MLP"}
-  #   - {"encoder.layers.encoder_layer_2.self_attention": "Layer3_SelfAttention"}
-  #   - {"encoder.layers.encoder_layer_2.mlp": "Layer3_MLP"}
-  #   - {"encoder.layers.encoder_layer_3.self_attention": "Layer4_SelfAttention"}
-  #   - {"encoder.layers.encoder_layer_3.mlp": "Layer4_MLP"}
-  #   - {"encoder.layers.encoder_layer_4.self_attention": "Layer5_SelfAttention"}
-  #   - {"encoder.layers.encoder_layer_4.mlp": "Layer5_MLP"}
-  #   - {"encoder.layers.encoder_layer_5.self_attention": "Layer6_SelfAttention"}
-  #   - {"encoder.layers.encoder_layer_5.mlp": "Layer6_MLP"}
-  #   - {"encoder.layers.encoder_layer_6.self_attention": "Layer7_SelfAttention"}
-  #   - {"encoder.layers.encoder_layer_6.mlp": "Layer7_MLP"}
-  #   - {"encoder.layers.encoder_layer_7.self_attention": "Layer8_SelfAttention"}
-  #   - {"encoder.layers.encoder_layer_7.mlp": "Layer8_MLP"}
-  #   - {"encoder.layers.encoder_layer_8.self_attention": "Layer9_SelfAttention"}
-  #   - {"encoder.layers.encoder_layer_8.mlp": "Layer9_MLP"}
-  #   - {"encoder.layers.encoder_layer_9.self_attention": "Layer10_SelfAttention"}
-  #   - {"encoder.layers.encoder_layer_9.mlp": "Layer10_MLP"}
-  #   - {"encoder.layers.encoder_layer_10.self_attention": "Layer11_SelfAttention"}
-  #   - {"encoder.layers.encoder_layer_10.mlp": "Layer11_MLP"}
-  #   - {"encoder.layers.encoder_layer_11.self_attention": "Layer12_SelfAttention"}
-  #   - {"encoder.layers.encoder_layer_11.mlp": "Layer12_MLP"}
-  #   - {"encoder.ln": "Final_LayerNorm"}
+  vit_b_16:
+    'conv_proj': 'conv_proj'
+    'encoder': 'encoder'
+    'encoder.dropout': 'encoder.dropout'
+    'encoder.layers': 'encoder.layers'
+
+    'encoder.layers.encoder_layer_0': 'layer_0'
+    'encoder.layers.encoder_layer_0.ln_1': 'layer_0.ln_1'
+    'encoder.layers.encoder_layer_0.self_attention': 'layer_0.self_attention'
+    # 'encoder.layers.encoder_layer_0.self_attention.out_proj': 'layer_0.self_attention.out_proj'
+    'encoder.layers.encoder_layer_0.dropout': 'layer_0.dropout'
+    # 'encoder.layers.encoder_layer_0.ln_2': 'layer_0.ln_2'
+    'encoder.layers.encoder_layer_0.mlp': 'layer_0.mlp'
+    # 'encoder.layers.encoder_layer_0.mlp.0': 'layer_0.mlp.0'
+    # 'encoder.layers.encoder_layer_0.mlp.1': 'layer_0.mlp.1'
+    # 'encoder.layers.encoder_layer_0.mlp.2': 'layer_0.mlp.2'
+    # 'encoder.layers.encoder_layer_0.mlp.3': 'layer_0.mlp.3'
+    # 'encoder.layers.encoder_layer_0.mlp.4': 'layer_0.mlp.4'
+
+    'encoder.layers.encoder_layer_1': 'layer_1'
+    'encoder.layers.encoder_layer_1.ln_1': 'layer_1.ln_1'
+    'encoder.layers.encoder_layer_1.self_attention': 'layer_1.self_attention'
+    # 'encoder.layers.encoder_layer_1.self_attention.out_proj': 'layer_1.self_attention.out_proj'
+    'encoder.layers.encoder_layer_1.dropout': 'layer_1.dropout'
+    # 'encoder.layers.encoder_layer_1.ln_2': 'layer_1.ln_2'
+    'encoder.layers.encoder_layer_1.mlp': 'layer_1.mlp'
+    # 'encoder.layers.encoder_layer_1.mlp.0': 'layer_1.mlp.0'
+    # 'encoder.layers.encoder_layer_1.mlp.1': 'layer_1.mlp.1'
+    # 'encoder.layers.encoder_layer_1.mlp.2': 'layer_1.mlp.2'
+    # 'encoder.layers.encoder_layer_1.mlp.3': 'layer_1.mlp.3'
+    # 'encoder.layers.encoder_layer_1.mlp.4': 'layer_1.mlp.4'
+    'encoder.layers.encoder_layer_2': 'layer_2'
+    'encoder.layers.encoder_layer_2.ln_1': 'layer_2.ln_1'
+    'encoder.layers.encoder_layer_2.self_attention': 'layer_2.self_attention'
+    # 'encoder.layers.encoder_layer_2.self_attention.out_proj': 'layer_2.self_attention.out_proj'
+    'encoder.layers.encoder_layer_2.dropout': 'layer_2.dropout'
+    # 'encoder.layers.encoder_layer_2.ln_2': 'layer_2.ln_2'
+    'encoder.layers.encoder_layer_2.mlp': 'layer_2.mlp'
+    # 'encoder.layers.encoder_layer_2.mlp.0': 'layer_2.mlp.0'
+    # 'encoder.layers.encoder_layer_2.mlp.1': 'layer_2.mlp.1'
+    # 'encoder.layers.encoder_layer_2.mlp.2': 'layer_2.mlp.2'
+    # 'encoder.layers.encoder_layer_2.mlp.3': 'layer_2.mlp.3'
+    # 'encoder.layers.encoder_layer_2.mlp.4': 'layer_2.mlp.4'
+    
+    'encoder.layers.encoder_layer_3': 'layer_3'
+    'encoder.layers.encoder_layer_3.ln_1': 'layer_3.ln_1'
+    'encoder.layers.encoder_layer_3.self_attention': 'layer_3.self_attention'
+    # 'encoder.layers.encoder_layer_3.self_attention.out_proj': 'layer_3.self_attention.out_proj'
+    'encoder.layers.encoder_layer_3.dropout': 'layer_3.dropout'
+    # 'encoder.layers.encoder_layer_3.ln_2': 'layer_3.ln_2'
+    'encoder.layers.encoder_layer_3.mlp': 'layer_3.mlp'
+    # 'encoder.layers.encoder_layer_3.mlp.0': 'layer_3.mlp.0'
+    # 'encoder.layers.encoder_layer_3.mlp.1': 'layer_3.mlp.1'
+    # 'encoder.layers.encoder_layer_3.mlp.2': 'layer_3.mlp.2'
+    # 'encoder.layers.encoder_layer_3.mlp.3': 'layer_3.mlp.3'
+    # 'encoder.layers.encoder_layer_3.mlp.4': 'layer_3.mlp.4'
+
+    'encoder.layers.encoder_layer_4': 'layer_4'
+    'encoder.layers.encoder_layer_4.ln_1': 'layer_4.ln_1'
+    'encoder.layers.encoder_layer_4.self_attention': 'layer_4.self_attention'
+    # 'encoder.layers.encoder_layer_4.self_attention.out_proj': 'layer_4.self_attention.out_proj'
+    'encoder.layers.encoder_layer_4.dropout': 'layer_4.dropout'
+    # 'encoder.layers.encoder_layer_4.ln_2': 'layer_4.ln_2'
+    'encoder.layers.encoder_layer_4.mlp': 'layer_4.mlp'
+    # 'encoder.layers.encoder_layer_4.mlp.0': 'layer_4.mlp.0'
+    # 'encoder.layers.encoder_layer_4.mlp.1': 'layer_4.mlp.1'
+    # 'encoder.layers.encoder_layer_4.mlp.2': 'layer_4.mlp.2'
+    # 'encoder.layers.encoder_layer_4.mlp.3': 'layer_4.mlp.3'
+    # 'encoder.layers.encoder_layer_4.mlp.4': 'layer_4.mlp.4'
+
+    'encoder.layers.encoder_layer_5': 'layer_5'
+    'encoder.layers.encoder_layer_5.ln_1': 'layer_5.ln_1'
+    'encoder.layers.encoder_layer_5.self_attention': 'layer_5.self_attention'
+    # 'encoder.layers.encoder_layer_5.self_attention.out_proj': 'layer_5.self_attention.out_proj'
+    'encoder.layers.encoder_layer_5.dropout': 'layer_5.dropout'
+    # 'encoder.layers.encoder_layer_5.ln_2': 'layer_5.ln_2'
+    'encoder.layers.encoder_layer_5.mlp': 'layer_5.mlp'
+    # 'encoder.layers.encoder_layer_5.mlp.0': 'layer_5.mlp.0'
+    # 'encoder.layers.encoder_layer_5.mlp.1': 'layer_5.mlp.1'
+    # 'encoder.layers.encoder_layer_5.mlp.2': 'layer_5.mlp.2'
+    # 'encoder.layers.encoder_layer_5.mlp.3': 'layer_5.mlp.3'
+    # 'encoder.layers.encoder_layer_5.mlp.4': 'layer_5.mlp.4'
+
+    'encoder.layers.encoder_layer_6': 'layer_6'
+    'encoder.layers.encoder_layer_6.ln_1': 'layer_6.ln_1'
+    'encoder.layers.encoder_layer_6.self_attention': 'layer_6.self_attention'
+    # 'encoder.layers.encoder_layer_6.self_attention.out_proj': 'layer_6.self_attention.out_proj'
+    'encoder.layers.encoder_layer_6.dropout': 'layer_6.dropout'
+    # 'encoder.layers.encoder_layer_6.ln_2': 'layer_6.ln_2'
+    'encoder.layers.encoder_layer_6.mlp': 'layer_6.mlp'
+    # 'encoder.layers.encoder_layer_6.mlp.0': 'layer_6.mlp.0'
+    # 'encoder.layers.encoder_layer_6.mlp.1': 'layer_6.mlp.1'
+    # 'encoder.layers.encoder_layer_6.mlp.2': 'layer_6.mlp.2'
+    # 'encoder.layers.encoder_layer_6.mlp.3': 'layer_6.mlp.3'
+    # 'encoder.layers.encoder_layer_6.mlp.4': 'layer_6.mlp.4'
+    
+    'encoder.layers.encoder_layer_7': 'layer_7'
+    'encoder.layers.encoder_layer_7.ln_1': 'layer_7.ln_1'
+    'encoder.layers.encoder_layer_7.self_attention': 'layer_7.self_attention'
+    # 'encoder.layers.encoder_layer_7.self_attention.out_proj': 'layer_7.self_attention.out_proj'
+    'encoder.layers.encoder_layer_7.dropout': 'layer_7.dropout'
+    # 'encoder.layers.encoder_layer_7.ln_2': 'layer_7.ln_2'
+    'encoder.layers.encoder_layer_7.mlp': 'layer_7.mlp'
+    # 'encoder.layers.encoder_layer_7.mlp.0': 'layer_7.mlp.0'
+    # 'encoder.layers.encoder_layer_7.mlp.1': 'layer_7.mlp.1'
+    # 'encoder.layers.encoder_layer_7.mlp.2': 'layer_7.mlp.2'
+    # 'encoder.layers.encoder_layer_7.mlp.3': 'layer_7.mlp.3'
+    # 'encoder.layers.encoder_layer_7.mlp.4': 'layer_7.mlp.4'
+
+    'encoder.layers.encoder_layer_8': 'layer_8'
+    'encoder.layers.encoder_layer_8.ln_1': 'layer_8.ln_1'
+    'encoder.layers.encoder_layer_8.self_attention': 'layer_8.self_attention'
+    # 'encoder.layers.encoder_layer_8.self_attention.out_proj': 'layer_8.self_attention.out_proj'
+    'encoder.layers.encoder_layer_8.dropout': 'layer_8.dropout'
+    # 'encoder.layers.encoder_layer_8.ln_2': 'layer_8.ln_2'
+    'encoder.layers.encoder_layer_8.mlp': 'layer_8.mlp'
+    # 'encoder.layers.encoder_layer_8.mlp.0': 'layer_8.mlp.0'
+    # 'encoder.layers.encoder_layer_8.mlp.1': 'layer_8.mlp.1'
+    # 'encoder.layers.encoder_layer_8.mlp.2': 'layer_8.mlp.2'
+    # 'encoder.layers.encoder_layer_8.mlp.3': 'layer_8.mlp.3'
+    # 'encoder.layers.encoder_layer_8.mlp.4': 'layer_8.mlp.4'
+
+    'encoder.layers.encoder_layer_9': 'layer_9'
+    'encoder.layers.encoder_layer_9.ln_1': 'layer_9.ln_1'
+    'encoder.layers.encoder_layer_9.self_attention': 'layer_9.self_attention'
+    # 'encoder.layers.encoder_layer_9.self_attention.out_proj': 'layer_9.self_attention.out_proj'
+    'encoder.layers.encoder_layer_9.dropout': 'layer_9.dropout'
+    # 'encoder.layers.encoder_layer_9.ln_2': 'layer_9.ln_2'
+    'encoder.layers.encoder_layer_9.mlp': 'layer_9.mlp'
+    # 'encoder.layers.encoder_layer_9.mlp.0': 'layer_9.mlp.0'
+    # 'encoder.layers.encoder_layer_9.mlp.1': 'layer_9.mlp.1'
+    # 'encoder.layers.encoder_layer_9.mlp.2': 'layer_9.mlp.2'
+    # 'encoder.layers.encoder_layer_9.mlp.3': 'layer_9.mlp.3'
+    # 'encoder.layers.encoder_layer_9.mlp.4': 'layer_9.mlp.4'
+
+    'encoder.layers.encoder_layer_10': 'layer_10'
+    'encoder.layers.encoder_layer_10.ln_1': 'layer_10.ln_1'
+    'encoder.layers.encoder_layer_10.self_attention': 'layer_10.self_attention'
+    # 'encoder.layers.encoder_layer_10.self_attention.out_proj': 'layer_10.self_attention.out_proj'
+    'encoder.layers.encoder_layer_10.dropout': 'layer_10.dropout'
+    # 'encoder.layers.encoder_layer_10.ln_2': 'layer_10.ln_2'
+    'encoder.layers.encoder_layer_10.mlp': 'layer_10.mlp'
+    # 'encoder.layers.encoder_layer_10.mlp.0': 'layer_10.mlp.0'
+    # 'encoder.layers.encoder_layer_10.mlp.1': 'layer_10.mlp.1'
+    # 'encoder.layers.encoder_layer_10.mlp.2': 'layer_10.mlp.2'
+    # 'encoder.layers.encoder_layer_10.mlp.3': 'layer_10.mlp.3'
+    # 'encoder.layers.encoder_layer_10.mlp.4': 'layer_10.mlp.4'
+
+    'encoder.layers.encoder_layer_11': 'layer_11'
+    'encoder.layers.encoder_layer_11.ln_1': 'layer_11.ln_1'
+    'encoder.layers.encoder_layer_11.self_attention': 'layer_11.self_attention'
+    # 'encoder.layers.encoder_layer_11.self_attention.out_proj': 'layer_11.self_attention.out_proj'
+    'encoder.layers.encoder_layer_11.dropout': 'layer_11.dropout'
+    # 'encoder.layers.encoder_layer_11.ln_2': 'layer_11.ln_2'
+    'encoder.layers.encoder_layer_11.mlp': 'layer_11.mlp'
+    # 'encoder.layers.encoder_layer_11.mlp.0': 'layer_11.mlp.0'
+    # 'encoder.layers.encoder_layer_11.mlp.1': 'layer_11.mlp.1'
+    # 'encoder.layers.encoder_layer_11.mlp.2': 'layer_11.mlp.2'
+    # 'encoder.layers.encoder_layer_11.mlp.3': 'layer_11.mlp.3'
+    # 'encoder.layers.encoder_layer_11.mlp.4': 'layer_11.mlp.4'
+    
+    #'encoder.ln': 'encoder.ln'
+    'heads': 'heads'
+    #'heads.head': 'heads.head'
+  
   
  
 

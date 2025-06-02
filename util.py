@@ -497,11 +497,54 @@ def extract_features(model, dataloader, device, return_nodes=None, unflatten=Tru
     return all_features
 
 
+def extract_features_2(model, dataloader, device, return_nodes):
 
+    # Apply return_nodes if specified
+    if return_nodes:
+        model = create_feature_extractor(model, return_nodes=return_nodes)
+
+    model.eval()
+    model.to(device)
+    
+    features = {layer: [] for layer in return_nodes.values()}
+    with torch.no_grad():
+        for batch in tqdm.tqdm(dataloader, desc="Extracting features"):
+            inputs = batch[0].to(device)
+            outputs = model(inputs)
+            for layer, activation in outputs.items():
+                # If activation is a tuple, take the first element
+                if isinstance(activation, tuple):
+                    activation = activation[0]
+                # If activation is not a tensor, try to convert or skip
+                if not isinstance(activation, torch.Tensor):
+                    continue
+                activation = torch.flatten(activation, start_dim=1)
+                features[layer].append(activation.cpu())
+    # Concatenate all batches
+    for layer in features:
+        if features[layer]:
+            features[layer] = torch.cat(features[layer], dim=0)
+        else:
+            features[layer] = torch.empty(0)
+    return features
 
 ############################ layer depth functions
 
 def get_layer_depth(model_name, layer_name, normalize = False):
+    
+    layers = get_layer_order(model_name)
+    layer_dict = dict(enumerate(layers))
+
+    layer_depth = [key for key, value in layer_dict.items() if value == layer_name][0]
+    
+    if normalize:
+        max = list(layer_dict.keys())[-1]
+        layer_depth = layer_depth / max
+
+    return layer_depth
+    
+
+def get_layer_order(model_name):
 
     if model_name == 'alexnet':
         layers= [
@@ -510,14 +553,10 @@ def get_layer_depth(model_name, layer_name, normalize = False):
             'Conv3', 'Relu3',
             'Conv4', 'Relu4',
             'Conv5', 'Relu5', 'MaxPool5',
-            # 'avgpool',
-            # 'classifier.0',
-            # 'classifier.1',
-            # 'classifier.2',
-            # 'classifier.3',
-            # 'classifier.4',
-            # 'classifier.5',
-            # 'classifier.6',
+            'AvgPool', 'Dropout',
+            'FullyConnected1', 'Relu6', 'Dropout2',
+            'FullyConnected2', 'Relu7',
+            'FullyConnected3',
         ]
         layer_dict = dict(enumerate(layers))
     elif model_name == 'resnet50':
@@ -537,9 +576,9 @@ def get_layer_depth(model_name, layer_name, normalize = False):
             'layer3.4', 'layer3.4.conv1', 'layer3.4.bn1', 'layer3.4.conv2', 'layer3.4.bn2', 'layer3.4.conv3', 'layer3.4.bn3', 'layer3.4.relu',
             'layer3.5', 'layer3.5.conv1', 'layer3.5.bn1', 'layer3.5.conv2', 'layer3.5.bn2', 'layer3.5.conv3', 'layer3.5.bn3', 'layer3.5.relu',
             'layer4.0', 'layer4.0.conv1', 'layer4.0.bn1', 'layer4.0.conv2', 'layer4.0.bn2', 'layer4.0.conv3', 'layer4.0.bn3', 'layer4.0.relu', 'layer4.0.downsample', 'layer4.0.downsample.0', 'layer4.0.downsample.1',
-            'layer4.1', 'layer4.1.conv1', 'layer4.1.bn1', 'layer4.1.conv2', 'layer4.1.bn2',
+            'layer4.1', 'layer4.1.conv1', 'layer4.1.bn1', 'layer4.1.conv2', 'layer4.1.bn2', 'layer4.1.conv3', 'layer4.1.bn3', 'layer4.1.relu',
             'layer4.2', 'layer4.2.conv1', 'layer4.2.bn1', 'layer4.2.conv2', 'layer4.2.bn2', 'layer4.2.conv3', 'layer4.2.bn3', 'layer4.2.relu',
-            #'avgpool', 'fc'
+            'avgpool', 'fc'
         ]
         layer_dict = dict(enumerate(layers))
     elif model_name == 'vit_b_16':
@@ -587,21 +626,9 @@ def get_layer_depth(model_name, layer_name, normalize = False):
 
             "encoder.ln", "heads", "heads.head"
         ]
-        layer_dict = dict(enumerate(layers))
     else:
         raise ValueError("Model not supported for layer depth calculation.")
-    
-    layer_depth = [key for key, value in layer_dict.items() if value == layer_name][0]
-    
-    if normalize:
-        max = list(layer_dict.keys())[-1]
-        layer_depth = layer_depth / max
 
-    return layer_depth
-    
-
-    
-    
-
+    return layers
     
     
