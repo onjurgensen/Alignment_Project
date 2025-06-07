@@ -21,7 +21,7 @@ import similarity
 
 ######################### Regression ##########################
 
-def pls_regression(X_train, X_test, Y_train, Y_test, n_components=1, multioutput= "raw_values", standardize=False, permute = False):
+def pls_regression(X_train, Y_train, X_test, Y_test, n_components=1, multioutput= "raw_values", standardize=False, permute = False):
     """
     Partial Least Squares Regression (PLS) adapted from sklearn.
     Returns the R^2 score for PLS regression between two matrices.

@@ -125,7 +125,7 @@ def get_tvsd(subject, device="cuda", group_name = "test_MUA", snr_cutoff = 2):
     Args:
         subject (str): Subject identifier ("F" or "N").
         device (str): Device to load the data on ("cuda" or "cpu").
-        group_name (str): test_MUA, train_MUA, or test_MUA_rep
+        group_name (str): test_MUA, train_MUA, or test_MUA_reps
 
     """
 
