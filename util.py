@@ -156,7 +156,7 @@ def get_tvsd(subject, device="cuda", group_name = "test_MUA", snr_cutoff = 2):
     #     'monkeyN': {i: 'V1' for i in range(513)} | {i: 'V4' for i in range(513, 769)} | {i: 'IT' for i in range(769, 1024)},
     # }
 
-    roi_mask = np.concatenate([[roi_dict['V1'] for i in range(513)], [roi_dict['V4'] for i in range(833, 1024)], [roi_dict['IT'] for i in range(513, 833)]])  if subject == 'F' else \
+    roi_mask = np.concatenate([[roi_dict['V1'] for i in range(513)], [roi_dict['IT'] for i in range(513, 833)], [roi_dict['V4'] for i in range(833, 1024)]])  if subject == 'F' else \
                np.concatenate([[roi_dict['V1'] for i in range(513)], [roi_dict['V4'] for i in range(513, 769)],  [roi_dict['IT'] for i in range(769, 1024)]]) if subject == 'N' else \
                None
     if snr_cutoff is not None:
@@ -599,7 +599,7 @@ def get_layer_order(model_name):
             "layer_3.mlp", "layer_3.mlp.0", "layer_3.mlp.1", "layer_3.mlp.2", "layer_3.mlp.3", "layer_3.mlp.4",
             "layer_4",
             "layer_4.ln_1", "layer_4.self_attention", "layer_4.self_attention.out_proj", "layer_4.dropout", "layer_4.ln_2",
-            "layer_4.mlp", "layer_4.mlp.0", "layer_4.mlp.1", "layer_4.mlp.2", "layer_4.mlp.3", "layer_4.mlp.4", "layer_5",
+            "layer_4.mlp", "layer_4.mlp.0", "layer_4.mlp.1", "layer_4.mlp.2", "layer_4.mlp.3", "layer_4.mlp.4",
             "layer_5",
             "layer_5.ln_1", "layer_5.self_attention", "layer_5.self_attention.out_proj", "layer_5.dropout", "layer_5.ln_2",
             "layer_5.mlp", "layer_5.mlp.0", "layer_5.mlp.1", "layer_5.mlp.2", "layer_5.mlp.3", "layer_5.mlp.4",
@@ -621,8 +621,6 @@ def get_layer_order(model_name):
             "layer_11",
             "layer_11.ln_1", "layer_11.self_attention", "layer_11.self_attention.out_proj", "layer_11.dropout", "layer_11.ln_2",
             "layer_11.mlp", "layer_11.mlp.0", "layer_11.mlp.1", "layer_11.mlp.2", "layer_11.mlp.3", "layer_11.mlp.4",
-            
-            "layer_12.self_attention", # what is this?
 
             "encoder.ln", "heads", "heads.head"
         ]

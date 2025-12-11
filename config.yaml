@@ -11,8 +11,8 @@ model_seeds:
     - 3
     - 4
     - 5
-  vit_b_16:
-    - 'torchvision_IMAGENET1K_V1'
+  #it_b_16:
+   # - 'torchvision_IMAGENET1K_V1'
 
 
 models:
