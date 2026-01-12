@@ -338,10 +338,16 @@ def get_model(model_name, seed):
         model.load_state_dict(state_dict)
         model.eval()
     
-    elif model_name == 'vit_b_16':
+    elif model_name == 'convnext_tiny':
 
-        weights = ViT_B_16_Weights.IMAGENET1K_V1
-        model = vit_b_16(weights=weights)
+        model = models.convnext_tiny()
+
+        path = os.path.expanduser(f'~/Documents/pretrained_DNNs/convnext_tiny_599_s{seed}.pth')
+        checkpoint = torch.load(path, weights_only=False)
+
+        state_dict = checkpoint['model']
+
+        model.load_state_dict(state_dict)
 
         model.eval()
 
@@ -581,49 +587,6 @@ def get_layer_order(model_name):
             'avgpool', 'fc'
         ]
         layer_dict = dict(enumerate(layers))
-    elif model_name == 'vit_b_16':
-        layers = [
-            "conv_proj", "encoder", "encoder.dropout", "encoder.layers",
-
-            "layer_0", 
-            "layer_0.ln_1", "layer_0.self_attention", "layer_0.self_attention.out_proj", "layer_0.dropout", "layer_0.ln_2",
-            "layer_0.mlp", "layer_0.mlp.0", "layer_0.mlp.1", "layer_0.mlp.2", "layer_0.mlp.3", "layer_0.mlp.4",
-            "layer_1",
-            "layer_1.ln_1", "layer_1.self_attention", "layer_1.self_attention.out_proj", "layer_1.dropout", "layer_1.ln_2",
-            "layer_1.mlp", "layer_1.mlp.0", "layer_1.mlp.1", "layer_1.mlp.2", "layer_1.mlp.3", "layer_1.mlp.4",
-            "layer_2",
-            "layer_2.ln_1", "layer_2.self_attention", "layer_2.self_attention.out_proj", "layer_2.dropout", "layer_2.ln_2",
-            "layer_2.mlp", "layer_2.mlp.0", "layer_2.mlp.1", "layer_2.mlp.2", "layer_2.mlp.3","layer_2.mlp.4",
-            "layer_3",
-            "layer_3.ln_1", "layer_3.self_attention", "layer_3.self_attention.out_proj", "layer_3.dropout", "layer_3.ln_2",
-            "layer_3.mlp", "layer_3.mlp.0", "layer_3.mlp.1", "layer_3.mlp.2", "layer_3.mlp.3", "layer_3.mlp.4",
-            "layer_4",
-            "layer_4.ln_1", "layer_4.self_attention", "layer_4.self_attention.out_proj", "layer_4.dropout", "layer_4.ln_2",
-            "layer_4.mlp", "layer_4.mlp.0", "layer_4.mlp.1", "layer_4.mlp.2", "layer_4.mlp.3", "layer_4.mlp.4",
-            "layer_5",
-            "layer_5.ln_1", "layer_5.self_attention", "layer_5.self_attention.out_proj", "layer_5.dropout", "layer_5.ln_2",
-            "layer_5.mlp", "layer_5.mlp.0", "layer_5.mlp.1", "layer_5.mlp.2", "layer_5.mlp.3", "layer_5.mlp.4",
-            "layer_6",
-            "layer_6.ln_1", "layer_6.self_attention", "layer_6.self_attention.out_proj", "layer_6.dropout", "layer_6.ln_2",
-            "layer_6.mlp", "layer_6.mlp.0", "layer_6.mlp.1", "layer_6.mlp.2", "layer_6.mlp.3", "layer_6.mlp.4",
-            "layer_7",
-            "layer_7.ln_1", "layer_7.self_attention", "layer_7.self_attention.out_proj", "layer_7.dropout", "layer_7.ln_2",
-            "layer_7.mlp", "layer_7.mlp.0", "layer_7.mlp.1", "layer_7.mlp.2", "layer_7.mlp.3", "layer_7.mlp.4",
-            "layer_8",
-            "layer_8.ln_1", "layer_8.self_attention", "layer_8.self_attention.out_proj", "layer_8.dropout", "layer_8.ln_2",
-            "layer_8.mlp", "layer_8.mlp.0", "layer_8.mlp.1", "layer_8.mlp.2", "layer_8.mlp.3","layer_8.mlp.4", 
-            "layer_9",
-            "layer_9.ln_1", "layer_9.self_attention", "layer_9.self_attention.out_proj", "layer_9.dropout", "layer_9.ln_2",
-            "layer_9.mlp", "layer_9.mlp.0", "layer_9.mlp.1","layer_9.mlp.2", "layer_9.mlp.3", "layer_9.mlp.4",
-            "layer_10",
-            "layer_10.ln_1", "layer_10.self_attention", "layer_10.self_attention.out_proj", "layer_10.dropout", "layer_10.ln_2",
-            "layer_10.mlp", "layer_10.mlp.0", "layer_10.mlp.1", "layer_10.mlp.2", "layer_10.mlp.3", "layer_10.mlp.4",
-            "layer_11",
-            "layer_11.ln_1", "layer_11.self_attention", "layer_11.self_attention.out_proj", "layer_11.dropout", "layer_11.ln_2",
-            "layer_11.mlp", "layer_11.mlp.0", "layer_11.mlp.1", "layer_11.mlp.2", "layer_11.mlp.3", "layer_11.mlp.4",
-
-            "encoder.ln", "heads", "heads.head"
-        ]
     else:
         raise ValueError("Model not supported for layer depth calculation.")
 
